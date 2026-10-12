@@ -178,7 +178,7 @@ Google 官方 HTTPS 端点的精确 ID 将 `minimal` 调整为 `low`、`xhigh/ma
 
 #### 模型请求的重定向边界
 
-模型、侧聊、摘要、独立审批模型、服务商/模型/嵌入探测以及媒体鉴权请求使用 `apply_model_proxy`；阻塞嵌入使用 `apply_model_proxy_blocking`。两者在保留用户代理模式、超时与 User-Agent 的同时固定 `Policy::none()`，3xx 不授权把凭据或私有输入发往另一个端点；模型列表预检立即停止、不另发探测POST，Chat/Responses探测收到3xx返回明确失败，不显示“连接成功”。主对话与 STT 的既有禁止重定向策略保持。生成结果的无鉴权资源下载仍走各自的逐跳 SSRF 守卫，不由模型客户端自动跟随。
+模型、侧聊、摘要、独立审批模型、服务商/模型/嵌入探测以及媒体鉴权请求使用 `apply_model_proxy`；阻塞嵌入与崩溃自诊断使用 `apply_model_proxy_blocking`。两者在保留用户代理模式、超时与 User-Agent 的同时固定 `Policy::none()`，3xx 不授权把凭据或私有输入发往另一个端点；模型列表预检立即停止、不另发探测POST，Chat/Responses探测收到3xx返回明确失败，不显示“连接成功”。主对话与 STT 的既有禁止重定向策略保持。生成结果的无鉴权资源下载仍走各自的逐跳 SSRF 守卫，不由模型客户端自动跟随。
 
 workspace 直接 reqwest 为 0.13.5，明确关闭默认 features，启用原有 native-tls、HTTP/2、system-proxy、query/form 与压缩/流式能力。共享依赖仍包含 rustls；Telegram 适配器通过 `reqwest_teloxide` 保留 SDK 要求的 0.12.28 客户端，不能据直接依赖升级声称所有 HTTP 支线已统一。此边界不替代发送前 SSRF、来源授权或用量记账。
 
