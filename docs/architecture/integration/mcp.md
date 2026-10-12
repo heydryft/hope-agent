@@ -271,7 +271,7 @@ Streamable HTTP 和 SSE 是**两套 wire 协议，不能互相路由**：Streama
 
 - `description` 前缀 `[<server>] ` 方便模型归因；server 未给描述则回退 `MCP tool from server '<name>'`
 - 统一 `tier = Mcp`、`internal = false`、`concurrent_safe = false`；是否注入由 per-agent `capabilities.mcpEnabled` 门控
-- **`background_policy` 映射**（读 rmcp `execution.taskSupport`，spec date 2025-11-25）：`Required` / `Optional` → `GenericJob`（让 tool loop 的"同步预算超时自动后台化"分支可触发）；`Forbidden` / 缺省 → `ForegroundOnly`
+- **`background_policy`**：当前 catalog 始终发布 `ForegroundOnly`，不因远端 `execution.taskSupport` 为 `Required` / `Optional` 就投影为本地 Job。SDK 的协议生命周期与 Hope 的 `JobManager` 保持独立；至少两个授权服务器的取消/恢复/终态 fixture 通过后，才按受控实验门评估产品投影。
 - `deferredTools=true` 的 server，其工具不 eager 注入，改由 `tool_search` 发现
 
 ### 分发路径

@@ -2,7 +2,7 @@
 
 ## 2026-10-12：安全依赖维护与新卡吸收
 
-本轮 prepare `exit=0/ok=true`，独立分支 `codex/automation-7-20261012t010115-ddaae67c`；核验基线 **cd1d63fdbed9890bdccfe24f07c951fef638c810**，时间 **2026-10-12 09:01:22（Asia/Shanghai）**。#775 已实时确认 MERGED，没有本任务待续 PR；主目录、其他作者分支与专项历史只读。PR/精确头复审/CI/合并终态以本轮交付证据为准。
+本轮 prepare `exit=0/ok=true`，独立分支 `codex/automation-7-20261012t010115-ddaae67c`；核验基线 **cd1d63fdbed9890bdccfe24f07c951fef638c810**，时间 **2026-10-12 09:01:22（Asia/Shanghai）**。#775 已实时确认 MERGED，没有本任务待续 PR；主目录、其他作者分支与专项历史只读。交付前main经专用ref/远端/GitHub API核验为 `c188b19bfaedd8d3da0a7639c61264406906d6c3`，合入#818模型菜单修复的三处文件，保留其归属；原始基线和雷达快照不改写。PR/精确头复审/CI/合并终态以本轮交付证据为准。
 
 ### 输入与去重
 
@@ -20,7 +20,7 @@
 | P2 / 06 SDK-11/20 | 保持客户端MP4和中文编辑器工作流，替换停更封装器、核补丁锚点 | Mediabunny1.61.3隔离候选最终MP4两帧读回、异步写/编码失败清理3项通过；CodeMirror6.43.13/state6.7.6 ESM/CJS scoped patch通过。原时间戳/关键帧/IME scope保留；生产默认不切换；真实WebView编码/播放、设备IME及速度未知 |
 | 状态维护 / 全专项 | 逐卡来源/主责/阻塞/重评条件，保留所有真实实验与产品决策门 | FTR-007首片标签/夹具/启动需owner冻结；FTR-002/006、Design计划与付费/账号/用户数据仍关闭。拟定指标不写成收益，技术栈可等待项不为追版本制造改动 |
 
-本轮原生桌面检查首次发现新工作树缺sidecar，按仓库prepare脚本生成；直接reqwest迁移暴露teloxide Client类型边界，已保留其独立SDK客户端，未删除原代理/timeout/redirect守卫。PDF改为内存逐页接口，合成两页/空页与深层输入子进程验证通过；CodeMirror state重复版本已统一6.7.6，不用类型断言掩盖私有类型冲突。正常hooks/pre-push/CI与当前头复审必须收敛后才能合并；专项完整评测不进入默认门禁。
+本轮原生桌面检查首次发现新工作树缺sidecar，按仓库prepare脚本生成；直接reqwest迁移暴露teloxide Client类型边界，已保留其独立SDK客户端，未删除原代理/timeout/redirect守卫。PDF改为内存逐页接口，合成两页/空页与深层输入子进程验证通过；CodeMirror state重复版本已统一6.7.6，不用类型断言掩盖私有类型冲突。本地两次正常pre-push全门禁通过：Rust5385项、嵌套PDF子进程1项、7项既有ignored；前端300文件/1727项。正常hooks/pre-push/CI与当前头复审必须收敛后才能合并；专项完整评测不进入默认门禁。
 
 ### 全量状态与重新评估条件
 
