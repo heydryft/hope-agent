@@ -330,7 +330,7 @@ pub fn status() -> DangerousModeStatus;
 | 运行链 | 本轮锁定与边界 | 验证限制 |
 | --- | --- | --- |
 | 多窗口 Channel | Tauri 2.11.6；响应队列按所属 webview 隔离，关闭时清理；不放宽 CSP/capability | 依赖源码与 workspace 检查；真实多窗口交互另列待证 |
-| PDF 文本 | ha-core/ha-design 的 pdf-extract 0.12.1 → lopdf 0.42.0 | 合成深嵌套输入在子进程返回错误，正常两页/空页验证通过；不使用用户 PDF，不把 catch_unwind 当作 abort 隔离 |
+| PDF 文本 | ha-core/ha-design 的 pdf-extract 0.12.1 → lopdf 0.42.0 | 合成深嵌套输入在子进程返回错误，正常两页/空页验证通过；按真实页树逐页传播错误，内容流严格语法检查拒绝后页损坏，不返回已读前页作为完整成功；不使用用户 PDF，不把 catch_unwind 当作 abort 隔离 |
 | XML/Excel | 自有 quick-xml 0.41.0，calamine 0.36.1 → quick-xml 0.41.0；属性解码使用 XML 1.0 归一化 API | 原有大小/深度/属性/实体/ZIP 上限继续生效；xcb 构建链的 0.30.0 仍需上游 ABI 兼容路线，不宣称彻底去重 |
 | HTTP/TLS/取消 | 直接 reqwest 0.13.5（native-tls 保留）、rustls 0.23.45、h2 0.4.16、Tokio 1.53.2 | 禁止重定向不取代 SSRF；Telegram 适配器保留 SDK 所需的 reqwest 0.12.28；平台运行证据分别报告 |
 | 内存缓存与脚本 | lru 0.18.5；ha-core/ha-workflow 的 rquickjs 0.14.0 + serde 0.8.0 成对 | 不新增 unsafe 字节借用，保留原容量/超时/内存/取消语义 |

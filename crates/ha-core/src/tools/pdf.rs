@@ -189,15 +189,38 @@ async fn resolve_source(source: &PdfSource) -> Result<(Vec<u8>, String)> {
 
 /// Extract text from PDF bytes, returning per-page text.
 fn extract_text_from_bytes(data: &[u8]) -> Result<Vec<String>> {
-    let pages = pdf_extract::extract_text_from_mem_by_pages(data)
-        .map_err(|error| anyhow!("Text extraction failed: {error}"))?;
-    if pages.is_empty() {
+    let mut document = pdf_extract::Document::load_mem(data)
+        .map_err(|_| anyhow!("Text extraction failed: PDF cannot be parsed"))?;
+    if document.is_encrypted() {
+        document
+            .decrypt("")
+            .map_err(|_| anyhow!("Text extraction failed: PDF cannot be decrypted"))?;
+    }
+    let page_ids = document.get_pages();
+    if page_ids.is_empty() {
         return Err(anyhow!("PDF has no readable pages"));
     }
-    Ok(pages
-        .into_iter()
-        .map(|page| page.trim().to_string())
-        .collect())
+    let mut pages = Vec::with_capacity(page_ids.len());
+    for (page_number, page_id) in page_ids {
+        // pdf-extract's convenience iterator treats every page error as EOF.
+        // Enumerate the actual page tree and propagate a failure instead.
+        // Its content processor unwraps decoding; validate that fallible step
+        // before entering it so malformed streams return a controlled error.
+        pdf_extract::content::Content::decode_strict(
+            &document
+                .get_page_content(page_id)
+                .map_err(|_| anyhow!("PDF content on page {page_number} cannot be read"))?,
+        )
+        .map_err(|_| anyhow!("PDF content on page {page_number} is malformed"))?;
+        let mut text = String::new();
+        {
+            let mut output = pdf_extract::PlainTextOutput::new(&mut text);
+            pdf_extract::output_doc_page(&document, &mut output, page_number)
+                .map_err(|_| anyhow!("Text extraction failed on page {page_number}"))?;
+        }
+        pages.push(text.trim().to_string());
+    }
+    Ok(pages)
 }
 
 /// Byte-level PDF text extraction shared with `web_fetch`. The caller owns
@@ -576,6 +599,15 @@ mod parser_tests {
         assert!(text.contains("Second synthetic page"));
         let empty = extract_text_from_bytes(&synthetic_pdf("", &[""])).unwrap();
         assert!(empty.iter().all(|page| page.trim().is_empty()));
+    }
+
+    #[test]
+    fn later_page_failure_does_not_return_a_short_successful_document() {
+        let bytes = synthetic_pdf("", &["Valid first page", ") [ ("]);
+        assert!(pdf_extract::Document::load_mem(&bytes).is_ok());
+        let error = extract_text_from_bytes(&bytes).unwrap_err();
+        assert!(error.to_string().contains("page 2"));
+        assert!(extract_pdf_text_for_web_fetch(&bytes).is_err());
     }
 
     #[test]
