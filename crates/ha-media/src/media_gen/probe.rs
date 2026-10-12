@@ -10,7 +10,7 @@ use std::time::{Duration, Instant};
 
 use serde::Deserialize;
 
-use ha_core::provider::apply_proxy;
+use ha_core::provider::apply_model_proxy;
 
 use ha_core::media_gen::types::MediaVendorKind;
 
@@ -229,7 +229,7 @@ pub async fn test_media_provider(input: TestMediaProviderInput) -> Result<String
     }
 
     let start = Instant::now();
-    let client = apply_proxy(
+    let client = apply_model_proxy(
         reqwest::Client::builder()
             .connect_timeout(Duration::from_secs(15))
             .timeout(Duration::from_secs(15)),

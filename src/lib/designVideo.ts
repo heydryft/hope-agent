@@ -4,11 +4,17 @@
  * 关键：**零重依赖、纯客户端**——不捆 headless Chrome / FFmpeg（对症旧路线的重管线）。
  * 用**确定性时钟 harness**（patch rAF / performance.now / Date.now + Web Animations API
  * getAnimations 定格）把 motion 产物的 CSS/JS 动画逐帧定格，`html2canvas` 抓帧，
- * **WebCodecs VideoEncoder（H.264）** 编码 + `mp4-muxer` 封装成 MP4。两运行模式通用、离线可用。
+ * **WebCodecs VideoEncoder（H.264）** 编码 + `Mediabunny` 封装成 MP4。两运行模式通用、离线可用。
  */
 
 import html2canvas from "html2canvas"
-import { Muxer, ArrayBufferTarget } from "mp4-muxer"
+import {
+  Output,
+  Mp4OutputFormat,
+  BufferTarget,
+  EncodedVideoPacketSource,
+  EncodedPacket,
+} from "mediabunny"
 
 export interface VideoOpts {
   /** 栅格化倍率（清晰度），钳 [1,3]（视频逐帧，倍率越大越慢）。默认 1.5。 */
@@ -122,7 +128,7 @@ async function renderSized(html: string, width: number, height: number): Promise
 
 /**
  * 把 motion 产物 HTML 导出为 MP4。逐帧：`__dsSeek(t)` 定格 → `html2canvas` 抓帧 →
- * WebCodecs 编码 → mp4-muxer 封装。时长取 `data-ds-duration` / WAAPI / 6s 兜底，钳 [1s,30s]。
+ * WebCodecs 编码 → Mediabunny 封装。时长取 `data-ds-duration` / WAAPI / 6s 兜底，钳 [1s,30s]。
  */
 export async function exportVideo(
   html: string,
@@ -136,6 +142,7 @@ export async function exportVideo(
         configure: (c: unknown) => void
         encode: (f: unknown, o?: { keyFrame?: boolean }) => void
         flush: () => Promise<void>
+        close: () => void
       }
       isConfigSupported?: (c: unknown) => Promise<{ supported?: boolean }>
     }
@@ -174,47 +181,81 @@ export async function exportVideo(
     durMs = Math.min(maxDurMs, Math.max(1000, durMs))
     const totalFrames = Math.max(1, Math.round((durMs / 1000) * fps))
 
-    const muxer = new Muxer({
-      target: new ArrayBufferTarget(),
-      video: { codec: "avc", width: W, height: H },
-      fastStart: "in-memory",
+    const target = new BufferTarget()
+    const output = new Output({
+      target,
+      format: new Mp4OutputFormat({ fastStart: "in-memory" }),
     })
+    const source = new EncodedVideoPacketSource("avc")
+    output.addVideoTrack(source, { frameRate: fps })
+    let encodeError: Error | undefined
+    let writes = Promise.resolve()
     const encoder = new G.VideoEncoder({
-      output: (chunk: unknown, meta: unknown) =>
-        muxer.addVideoChunk(chunk as never, meta as never),
-      error: (e: unknown) => {
-        throw e instanceof Error ? e : new Error(String(e))
+      output: (chunk: unknown, meta: unknown) => {
+        try {
+          const packet = EncodedPacket.fromEncodedChunk(chunk as EncodedVideoChunk)
+          writes = writes
+            .then(async () => {
+              if (!encodeError) await source.add(packet, meta as EncodedVideoChunkMetadata)
+            })
+            .catch((error: unknown) => {
+              encodeError = error instanceof Error ? error : new Error(String(error))
+            })
+        } catch (error) {
+          encodeError = error instanceof Error ? error : new Error(String(error))
+        }
+      },
+      error: (error: unknown) => {
+        encodeError = error instanceof Error ? error : new Error(String(error))
       },
     })
-    encoder.configure(config)
+    try {
+      await output.start()
+      encoder.configure(config)
 
-    const stage = (h.doc.querySelector(".ds-stage") as HTMLElement | null) ?? h.doc.body
-    for (let i = 0; i < totalFrames; i++) {
-      const t = (i / fps) * 1000
-      try {
-        h.win.__dsSeek?.(t)
-      } catch {
-        /* ignore per-frame seek errors */
+      const stage = (h.doc.querySelector(".ds-stage") as HTMLElement | null) ?? h.doc.body
+      for (let i = 0; i < totalFrames; i++) {
+        const t = (i / fps) * 1000
+        try {
+          h.win.__dsSeek?.(t)
+        } catch {
+          /* ignore per-frame seek errors */
+        }
+        await new Promise((r) => setTimeout(r, 0))
+        const canvas = await html2canvas(stage, {
+          backgroundColor: "#000000",
+          scale,
+          useCORS: true,
+          logging: false,
+          width,
+          height,
+          windowWidth: width,
+          windowHeight: height,
+        })
+        const frame = new G.VideoFrame(canvas, { timestamp: Math.round(t * 1000) })
+        try {
+          encoder.encode(frame, { keyFrame: i % fps === 0 })
+        } finally {
+          frame.close()
+        }
+        // WebCodecs callbacks cannot await backpressure. Drain each captured
+        // frame before producing another, keeping the asynchronous writer bounded.
+        await encoder.flush()
+        await writes
+        if (encodeError) throw encodeError
+        opts?.onProgress?.(i + 1, totalFrames)
       }
-      await new Promise((r) => setTimeout(r, 0))
-      const canvas = await html2canvas(stage, {
-        backgroundColor: "#000000",
-        scale,
-        useCORS: true,
-        logging: false,
-        width,
-        height,
-        windowWidth: width,
-        windowHeight: height,
-      })
-      const frame = new G.VideoFrame(canvas, { timestamp: Math.round(t * 1000) })
-      encoder.encode(frame, { keyFrame: i % fps === 0 })
-      frame.close()
-      opts?.onProgress?.(i + 1, totalFrames)
+      await output.finalize()
+      if (!target.buffer) throw new Error("video export did not produce an MP4")
+      return new Blob([target.buffer], { type: "video/mp4" })
+    } finally {
+      try {
+        encoder.close()
+      } catch {
+        /* encoder errors may already close it */
+      }
+      if (output.state !== "finalized") await output.cancel()
     }
-    await encoder.flush()
-    muxer.finalize()
-    return new Blob([(muxer.target as ArrayBufferTarget).buffer], { type: "video/mp4" })
   } finally {
     h.cleanup()
   }

@@ -7,7 +7,9 @@ use std::time::{Duration, Instant};
 
 use crate::agent::{build_api_url, is_complete_endpoint_url};
 use crate::memory;
-use crate::provider::{apply_proxy, apply_proxy_from_config, ApiType, ProviderConfig, ProxyConfig};
+use crate::provider::{
+    apply_model_proxy, apply_proxy_from_config, ApiType, ProviderConfig, ProxyConfig,
+};
 use crate::truncate_utf8;
 use serde_json::{json, Value};
 
@@ -178,14 +180,15 @@ pub async fn test_embedding(config: memory::EmbeddingConfig) -> Result<String, S
                 }
             }
 
-            let client = apply_proxy(reqwest::Client::builder().timeout(Duration::from_secs(15)))
-                .build()
-                .map_err(|e| {
-                    serde_json::to_string(&serde_json::json!({
-                        "success": false, "message": format!("Client error: {}", e),
-                    }))
-                    .unwrap_or_default()
-                })?;
+            let client =
+                apply_model_proxy(reqwest::Client::builder().timeout(Duration::from_secs(15)))
+                    .build()
+                    .map_err(|e| {
+                        serde_json::to_string(&serde_json::json!({
+                            "success": false, "message": format!("Client error: {}", e),
+                        }))
+                        .unwrap_or_default()
+                    })?;
 
             let display_url = format!("{}/v1beta/models/{}:embedContent", base_url, model);
 
@@ -295,14 +298,15 @@ pub async fn test_embedding(config: memory::EmbeddingConfig) -> Result<String, S
                 }
             }
 
-            let client = apply_proxy(reqwest::Client::builder().timeout(Duration::from_secs(15)))
-                .build()
-                .map_err(|e| {
-                    serde_json::to_string(&serde_json::json!({
-                        "success": false, "message": format!("Client error: {}", e),
-                    }))
-                    .unwrap_or_default()
-                })?;
+            let client =
+                apply_model_proxy(reqwest::Client::builder().timeout(Duration::from_secs(15)))
+                    .build()
+                    .map_err(|e| {
+                        serde_json::to_string(&serde_json::json!({
+                            "success": false, "message": format!("Client error: {}", e),
+                        }))
+                        .unwrap_or_default()
+                    })?;
 
             let mut req = client
                 .post(&url)
@@ -620,7 +624,7 @@ pub async fn test_provider(mut config: ProviderConfig) -> Result<String, String>
     // the test exercises exactly what `sanitize()` will persist on save.
     config.sanitize();
     let workspace_id = resolve_probe_profile(&mut config)?;
-    let client = apply_proxy(
+    let client = apply_model_proxy(
         reqwest::Client::builder()
             .timeout(Duration::from_secs(10))
             .user_agent(&config.user_agent),
@@ -1176,7 +1180,7 @@ pub async fn test_model(mut config: ProviderConfig, model_id: String) -> Result<
     config.sanitize();
     let workspace_id = resolve_probe_profile(&mut config)?;
     let model_id = model_id.trim().to_string();
-    let client = apply_proxy(
+    let client = apply_model_proxy(
         reqwest::Client::builder()
             .timeout(Duration::from_secs(15))
             .user_agent(&config.user_agent),

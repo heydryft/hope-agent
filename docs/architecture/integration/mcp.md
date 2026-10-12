@@ -377,7 +377,7 @@ Composer 的统一 `@` 菜单通过 `mention_hooks` 获取 namespaced capability
 
 ## OAuth 2.1 + PKCE
 
-`oauth.rs` 是独立实现，不复用 `rmcp::auth_client`（rmcp 自带 reqwest 0.13，与 ha-mcp 的 reqwest 0.12 trait 冲突）。
+`oauth.rs` 是独立实现，不复用 `rmcp::auth_client`：issuer、刷新序列化、撤销围栏与条件安全写由 Hope 自己裁决。当前 workspace 与 rmcp 3.5.1 共用 reqwest 0.13.5；依赖统一不替代这些身份边界，也不启用远程 Tasks 的产品投影。
 
 ```mermaid
 sequenceDiagram
@@ -753,7 +753,7 @@ Dashboard Learning Tab → 选时间窗口 → 按 `ref_id` 前缀 `mcp__` 过�
 
 | 维度 | hope-agent | openclaw | claude-code |
 |---|---|---|---|
-| SDK | `rmcp` 1.5（Rust） | `@modelcontextprotocol/sdk`（TS） | 同 openclaw |
+| SDK | `rmcp` 3.5.1（Rust） | `@modelcontextprotocol/sdk`（TS） | 同 openclaw |
 | Transport | stdio / HTTP / SSE / WebSocket（4） | stdio / Streamable HTTP（2） | stdio / SSE / HTTP / WebSocket（4） |
 | 工具命名 | `mcp__<server>__<tool>` | 同 | 同 |
 | Scope 分层 | 全局（项目 / 临时预留） | 单层 | project / user / local（3 层） |
