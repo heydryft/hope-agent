@@ -14,7 +14,7 @@
 
 | 优先级 / 来源 | 用户工作流、基线与本轮范围 | 验收、实测和剩余边界 |
 | --- | --- | --- |
-| P0 / 06 SDK-01/02/03 | 多窗口大响应、PDF文本导入、侧聊/摘要/媒体/嵌入带凭据请求；修安全版本并禁止自动redirect | Tauri2.11.6；pdf-extract0.12.1/lopdf0.42；直接reqwest0.13.5保留native-tls及query/form。两项本地redirect回归通过；PDF子进程/分页2项、Office12项与workspace检查通过。Telegram SDK客户端独立0.12.28，未改代理或放宽SSRF；真实多窗口/TLS/Provider不宣称验收 |
+| P0 / 06 SDK-01/02/03 | 多窗口大响应、PDF文本导入、侧聊/摘要/媒体/嵌入带凭据请求；修安全版本并禁止自动redirect | Tauri2.11.6；pdf-extract0.12.1/lopdf0.42；直接reqwest0.13.5保留native-tls及query/form。两项本地redirect回归通过；PDF子进程/分页3项、Office12项与workspace检查通过。Telegram SDK客户端独立0.12.28，未改代理或放宽SSRF；真实多窗口/TLS/Provider不宣称验收 |
 | P1 / 06 SDK-04/05/06/07/10 | 保持现有HTTP/TLS、Office、取消、更新、MCP工作流，定点维护依赖 | rustls0.23.45/h2 0.4.16/Tokio1.53.2、quick-xml0.41/calamine0.36.1、updater两端2.12.0、rmcp3.5.1。updater应用拒绝降级；现有XML/ZIP预算保留。畸形TLS/H2、真实安装、完整conformance仍待各自fixture |
 | P2 / 06 SDK-08/09/18 | 计量缓存、图表清洗、脚本沙箱沿现有API补安全下限 | lru0.18.5、DOMPurify3.4.16、QuickJS0.14+serde0.8成对；不新增unsafe/扩大过滤或更改取消。缓存/脚本/跨平台门禁证据以日志/当前头CI为准 |
 | P2 / 06 SDK-11/20 | 保持客户端MP4和中文编辑器工作流，替换停更封装器、核补丁锚点 | Mediabunny1.61.3隔离候选最终MP4两帧读回、异步写/编码失败清理3项通过；CodeMirror6.43.13/state6.7.6 ESM/CJS scoped patch通过。原时间戳/关键帧/IME scope保留；生产默认不切换；真实WebView编码/播放、设备IME及速度未知 |
@@ -23,6 +23,8 @@
 本轮原生桌面检查首次发现新工作树缺sidecar，按仓库prepare脚本生成；直接reqwest迁移暴露teloxide Client类型边界，已保留其独立SDK客户端，未删除原代理/timeout/redirect守卫。PDF改为内存逐页接口，合成两页/空页与深层输入子进程验证通过；CodeMirror state重复版本已统一6.7.6，不用类型断言掩盖私有类型冲突。本地两次正常pre-push全门禁通过：Rust5385项、嵌套PDF子进程1项、7项既有ignored；前端300文件/1727项。正常hooks/pre-push/CI与当前头复审必须收敛后才能合并；专项完整评测不进入默认门禁。
 
 复审收口：逐页接口的任意错误即停止循环语义可能返回前页成功，改为显式读取页树、严格检查内容流并逐页传播失败；新增有效首行/损坏后页负例。Chat/Responses连接探测的3xx不能显示成功，模型列表预检重定向直接失败、不另发POST；四种状态×两协议×两阶段的16个本地分支回归验证无目标连接。中英手册同步；当前头复审/CI重新执行后才能合并。
+
+最新复审发现SiliconFlow/智谱结果链接复用禁止redirect的鉴权客户端，已改走共享逐跳SSRF/限量下载入口。两厂商的合法相对跳转、不携密钥、严格策略拒绝初始本地地址和元数据跳转拒绝以本地合成HTTP回归核验，不调用真实服务。
 
 ### 全量状态与重新评估条件
 
