@@ -17,7 +17,7 @@
 | P0 / 06 SDK-01/02/03 | 多窗口大响应、PDF文本导入、侧聊/摘要/媒体/嵌入带凭据请求；修安全版本并禁止自动redirect | Tauri2.11.6；pdf-extract0.12.1/lopdf0.42；直接reqwest0.13.5保留native-tls及query/form。两项本地redirect回归通过；PDF子进程/分页2项、Office12项与workspace检查通过。Telegram SDK客户端独立0.12.28，未改代理或放宽SSRF；真实多窗口/TLS/Provider不宣称验收 |
 | P1 / 06 SDK-04/05/06/07/10 | 保持现有HTTP/TLS、Office、取消、更新、MCP工作流，定点维护依赖 | rustls0.23.45/h2 0.4.16/Tokio1.53.2、quick-xml0.41/calamine0.36.1、updater两端2.12.0、rmcp3.5.1。updater应用拒绝降级；现有XML/ZIP预算保留。畸形TLS/H2、真实安装、完整conformance仍待各自fixture |
 | P2 / 06 SDK-08/09/18 | 计量缓存、图表清洗、脚本沙箱沿现有API补安全下限 | lru0.18.5、DOMPurify3.4.16、QuickJS0.14+serde0.8成对；不新增unsafe/扩大过滤或更改取消。缓存/脚本/跨平台门禁证据以日志/当前头CI为准 |
-| P2 / 06 SDK-11/20 | 保持客户端MP4和中文编辑器工作流，替换停更封装器、核补丁锚点 | Mediabunny1.61.3最终MP4两帧读回、异步写/编码失败清理3项通过；CodeMirror6.43.13/state6.7.6 ESM/CJS scoped patch通过。原时间戳/关键帧/IME scope保留；真实WebView编码/设备IME及速度未知 |
+| P2 / 06 SDK-11/20 | 保持客户端MP4和中文编辑器工作流，替换停更封装器、核补丁锚点 | Mediabunny1.61.3隔离候选最终MP4两帧读回、异步写/编码失败清理3项通过；CodeMirror6.43.13/state6.7.6 ESM/CJS scoped patch通过。原时间戳/关键帧/IME scope保留；生产默认不切换；真实WebView编码/播放、设备IME及速度未知 |
 | 状态维护 / 全专项 | 逐卡来源/主责/阻塞/重评条件，保留所有真实实验与产品决策门 | FTR-007首片标签/夹具/启动需owner冻结；FTR-002/006、Design计划与付费/账号/用户数据仍关闭。拟定指标不写成收益，技术栈可等待项不为追版本制造改动 |
 
 本轮原生桌面检查首次发现新工作树缺sidecar，按仓库prepare脚本生成；直接reqwest迁移暴露teloxide Client类型边界，已保留其独立SDK客户端，未删除原代理/timeout/redirect守卫。PDF改为内存逐页接口，合成两页/空页与深层输入子进程验证通过；CodeMirror state重复版本已统一6.7.6，不用类型断言掩盖私有类型冲突。正常hooks/pre-push/CI与当前头复审必须收敛后才能合并；专项完整评测不进入默认门禁。
@@ -145,7 +145,7 @@
 | `06-SDK-07` | 部分交付 | 10-06 SDK-07 | 将 updater 降级决定收回应用配置：updater Rust/JS精确2.12.0、应用allowDowngrades=false；既有GUI回归与workspace check证据另列。未使用生产源/安装真实更新，本地签名降级manifest与完整平台安装仍待fixture；不得由renderer覆盖或回退版本门。 |
 | `06-SDK-08` | 部分交付 | 10-06 SDK-08 | 清理 lru 条件性内存安全问题：ha-core/ha-channel lru最低0.18.2、实际锁0.18.5；容量、淘汰和计量key语义保留。当前缓存回归/CI另列，无新增unsafe或生产数据；自定义panic Drop攻击验收未运行，有反证后重评。 |
 | `06-SDK-09` | 部分交付 | 10-06 SDK-09 | 更新 DOMPurify 安全下限并核查第三方配置：DOMPurify override>=3.4.16、锁3.4.16，保留现行过滤。源码未引入IN_PLACE/hook；第三方清洗/跨调用真实攻击覆盖仍待专用fixture，不称默认Markdown已有XSS复现或完全免疫。 |
-| `06-SDK-11` | 部分交付 | 10-06 SDK-11 | 替换停止维护的 mp4-muxer：现有客户端MP4迁Mediabunny1.61.3（MPL-2.0元数据已核），保持harness/H.264/关键帧/时间戳；逐帧排空异步写，成功仅返最终MP4；真实封装器两帧读回与编码/写入失败清理3项通过。平台H.264质量/速度尚未测，取得离线设备fixture后重评。 |
+| `06-SDK-11` | 部分交付 | 10-06 SDK-11 | 替换停止维护的 mp4-muxer：现有客户端MP4迁移候选Mediabunny1.61.3（MPL-2.0元数据已核），保持harness/H.264/关键帧/时间戳；逐帧排空异步写，成功仅返最终MP4；真实封装器两帧读回与编码/写入失败清理3项通过。只供合成测试引用，生产默认仍为mp4-muxer；按来源门先取得各平台实际H.264/播放fixture再切换，质量/速度尚未测。 |
 | `06-SDK-13` | 待证据 | 10-06 SDK-13 | 分开评估 TypeScript 7 与 Vitest 5：TS7原生CLI与现有TypeScript AST API消费者需分开迁；Vitest5 mock/hoisting默认改变。候选版本不是兼容证据，本轮保留TS6/Vitest4，两个独立兼容分支和插件fixture通过后才迁。 |
 | `06-SDK-14` | 待决策 | 10-06 SDK-14 | 验证 React 19.3 对焦点与动效的简化：React19.3 Fragment refs/ViewTransition仅为能力PoC，无现有缺陷或可测收益；需冻结焦点、reduced-motion及WebView夹具/实验门。保持19.2.4，不为新API改虚拟列表与自动跟随。 |
 | `06-SDK-15` | 观察 | 10-06 SDK-15 | 保持 Oxc 六个 Rust crate 同步升级：Oxc六crate保持0.138.0；候选0.153跨15个pre1.0 minor，未发现当前必须迁移的调用修复。取得具体API/MSRV与编译收益证据后配对评估，不夹带Vite升级。 |

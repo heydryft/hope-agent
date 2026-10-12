@@ -623,7 +623,7 @@ PDF / PNG / 视频走「强路优先、客户端回退」两级（`design/render
   - **PDF** = `printToPDF`（矢量、文字可选可搜）
   - **PNG** = `captureScreenshot`（全保真，`backdrop-filter` / WebGL / 真实字体全捕获）
   - **视频 MP4** = 注入确定性时钟 harness → 逐帧 `__dsSeek` + 原生截图 → **ffmpeg** 编码 `libx264`
-- **客户端回退**：无浏览器后端 / 无 ffmpeg / 失败时前端自动降级——PNG/PDF 走 `html2canvas + jsPDF`，视频走 WebCodecs（`designVideo.ts`）与固定版本 Mediabunny 封装。客户端逐帧等待编码和异步写入背压，完成封装后才返回 MP4；编码/写入失败通过导出 promise 返回并释放 encoder、输出任务和 iframe。当前本地合成测试核对两帧 MP4 轨道/时间与失败清理，不替代各平台真实 H.264/WebView 验收；能力不可用时明确报错。
+- **客户端回退**：无浏览器后端 / 无 ffmpeg / 失败时前端自动降级——PNG/PDF 走 `html2canvas + jsPDF`，视频走 WebCodecs（`designVideo.ts`）与现有 mp4-muxer；能力不可用时明确报错。SDK-11 的 Mediabunny 1.61.3 迁移保留在 `designVideoMediabunnyCandidate.ts`，仅由合成测试引用，不接生产导出图。候选逐帧等待编码/异步写入、完成封装后才返回 MP4，失败释放 encoder、输出任务和 iframe；两帧真实封装读回与失败清理已核，跨平台实际 H.264/播放验收通过后再决定切换。
 
 | 格式 | 强路 | 客户端回退 |
 | --- | --- | --- |

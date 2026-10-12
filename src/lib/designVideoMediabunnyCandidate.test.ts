@@ -2,7 +2,7 @@
 import { Blob as NodeBlob } from "node:buffer"
 import { afterEach, beforeEach, expect, test, vi } from "vitest"
 import { BufferSource, EncodedVideoPacketSource, Input, MP4 } from "mediabunny"
-import { exportVideo } from "./designVideo"
+import { exportVideoMediabunnyCandidate as exportVideo } from "./designVideoMediabunnyCandidate"
 
 vi.mock("html2canvas", () => ({ default: vi.fn(async () => document.createElement("canvas")) }))
 
