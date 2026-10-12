@@ -324,6 +324,7 @@ pub fn clamp_reasoning_effort(model: &str, effort: &str) -> Option<String> {
     if is_claude_5_model(&model) {
         return match effort {
             "minimal" => Some("low".to_string()),
+            "xhigh" if model.starts_with("claude-haiku-5-5") => Some("xhigh".to_string()),
             "xhigh" => Some("max".to_string()),
             "low" | "medium" | "high" | "max" => Some(effort.to_string()),
             _ => None,
@@ -357,6 +358,7 @@ pub fn is_claude_5_model(model: &str) -> bool {
         "claude-mythos-5",
         "claude-sonnet-5",
         "claude-opus-5",
+        "claude-haiku-5-5",
     ]
     .iter()
     .any(|prefix| model.starts_with(prefix))
@@ -1290,6 +1292,10 @@ mod build_api_url_tests {
             ("kimi-k3", "medium", Some("low")),
             ("kimi-k3", "xhigh", Some("max")),
             ("claude-opus-5", "xhigh", Some("max")),
+            ("claude-haiku-5-5", "minimal", Some("low")),
+            ("claude-haiku-5-5", "xhigh", Some("xhigh")),
+            ("claude-haiku-5-5", "max", Some("max")),
+            ("claude-haiku-5-5", "none", None),
             ("claude-sonnet-4-6", "max", Some("xhigh")),
             ("gpt-5.1-codex-mini", "max", Some("high")),
             ("legacy-compatible", "max", Some("xhigh")),

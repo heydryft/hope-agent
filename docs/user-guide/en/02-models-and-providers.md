@@ -28,6 +28,14 @@ Hope Agent connects to each vendor's large models through a "**provider + API ke
 
 New Fireworks templates exclude retired GLM 5.2 Fast and Kimi K2.6 Turbo/Fast. Existing connections and dedicated deployments keep their settings; if you use a retired serverless model, choose a replacement according to the provider’s current availability.
 
+Templates and model autocomplete now include **Claude Haiku 5.5**, **Grok 4.7**, **MiniMax M3**, and Fireworks **DeepSeek V4.1 Flash, GLM 5.3, and GLM 5.3 Flash**. Haiku 5.5 supports a 1M context and 128K output, uses adaptive thinking, and allows thinking to be disabled; temperature is omitted. Grok 4.7 uses the OpenAI Chat compatible API, accepts images, supports a 500K context and reasoning up to `xhigh`; the vendor does not allow thinking to be disabled. The three Fireworks presets use Chat with a conservative 131,072-token output cap from the official examples; check dedicated deployment limits separately.
+
+Haiku 5.5 base input/output rates are $0.10/$0.50 per million tokens, rising to $0.50/$2.50 above 100,000 input tokens. Grok 4.7 base rates are $2/$6, rising to $4/$12 above 200K input. Templates and the dashboard store a single base rate and do not automatically calculate these tiers, caching, or regional premiums; they are not bills. New xAI templates exclude five explicitly retired IDs. Existing settings remain editable, but retired IDs may be billed at replacement-model rates, so check vendor pricing before migrating.
+
+MiniMax M3 uses the existing Anthropic compatible connection, accepts images, supports a 1M context and a thinking toggle, and defaults to the officially recommended 131,072 output tokens. Base input/output rates are $0.30/$1.20 per million tokens, rising to $0.60/$2.40 above 512K input. M3 has a thinking toggle rather than adjustable thinking depth. Video uploads and M3.1 Flash Preview are not preset capabilities. New templates exclude VL-01, which this compatible API does not list as supported; existing settings remain editable.
+
+New direct Google templates exclude Gemini 3.7 / 3.5 Flash, which redirect to newer models, and Gemini 2.5 models, which are restricted to users who previously used them. Choose stable Gemini 3.8 Flash or 3.6 Flash. Existing connections and other gateway candidates remain available.
+
 **Where**: Settings → **Model Configuration** → **Providers** tab → click "**Add Provider**" in the top right.
 
 The first page of the add wizard offers five paths:
@@ -56,7 +64,7 @@ If your provider has no ready-made template, choose "Custom provider" and follow
 2. Fill in the provider name, **Base URL**, API key (optional), thinking style, and billing currency (USD / CNY); you can test the connection.
 3. Add models: type a model name, ID, or provider name into the model ID field to search models from all built-in templates. Selecting a suggestion fills in the ID, display name, input types, context window, max output, and reasoning capability; you can still edit these manually. Use the up/down arrows to select, Enter to confirm, and Esc to close suggestions.
 
-Autocomplete works when adding or editing models without replacing your relay's address, API type, key, or thinking parameter format. If the catalog has pricing in the same currency that differs from your current pricing, a dialog shows the source and unit prices and lets you keep your prices or use the catalog prices; prices in another currency never directly overwrite yours. Model IDs are not autocorrected or automatically capitalized by the system.
+Autocomplete works when adding or editing models without replacing your relay's address, API type, key, or thinking parameter format. If the catalog has pricing in the same currency that differs from your current pricing, a dialog shows the source and unit prices and lets you keep your prices or use the catalog prices; prices in another currency never directly overwrite yours. Model IDs are not autocorrected or automatically capitalized by the system. When you enter a full ID, a candidate with exactly matching case appears first.
 
 > Suggestions come from built-in templates, not an online probe of models available through your relay. The same model ID can have different context limits at different providers. Check the suggestion's source and use the ID, capabilities, and actual pricing supported by your provider.
 

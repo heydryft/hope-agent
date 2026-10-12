@@ -12,6 +12,89 @@ const RETIRED_DIRECT_MODEL_IDS = [
 ]
 
 describe("provider template lifecycle hygiene", () => {
+  it("keeps deprecated and existing-user-only Gemini models out of new direct templates", () => {
+    const google = PROVIDER_TEMPLATES.find((provider) => provider.key === "google-gemini")!
+    for (const id of [
+      "gemini-3.7-flash",
+      "gemini-3.5-flash",
+      "gemini-2.5-pro",
+      "gemini-2.5-flash",
+      "gemini-2.5-flash-lite",
+    ]) {
+      expect(
+        google.models.some((model) => model.id === id),
+        id,
+      ).toBe(false)
+    }
+    expect(google.models.some((model) => model.id === "gemini-3.8-flash")).toBe(true)
+    expect(google.models.some((model) => model.id === "gemini-3.6-flash")).toBe(true)
+    expect(
+      PROVIDER_TEMPLATES.find((provider) => provider.key === "openrouter")?.models.some(
+        (model) => model.id === "google/gemini-3.7-flash",
+      ),
+    ).toBe(true)
+  })
+
+  it("offers stable Haiku 5.5 and Grok 4.7 while retaining existing alternatives", () => {
+    const anthropic = PROVIDER_TEMPLATES.find((provider) => provider.key === "anthropic")!
+    expect(anthropic.apiType).toBe("anthropic")
+    expect(anthropic.models.find((model) => model.id === "claude-haiku-5-5")).toMatchObject({
+      inputTypes: ["text", "image"],
+      contextWindow: 1_000_000,
+      maxTokens: 128_000,
+      reasoning: true,
+      costInput: 0.1,
+      costOutput: 0.5,
+    })
+    expect(anthropic.models.some((model) => model.id === "claude-haiku-4-5")).toBe(true)
+    const xai = PROVIDER_TEMPLATES.find((provider) => provider.key === "xai")!
+    expect(xai.apiType).toBe("openai-chat")
+    expect(xai.models.find((model) => model.id === "grok-4.7")).toMatchObject({
+      inputTypes: ["text", "image"],
+      contextWindow: 500_000,
+      maxTokens: 500_000,
+      reasoning: true,
+      costInput: 2,
+      costOutput: 6,
+    })
+    for (const retired of [
+      "grok-4-1-fast-non-reasoning",
+      "grok-4-fast-non-reasoning",
+      "grok-4-0709",
+      "grok-code-fast-1",
+      "grok-3",
+    ]) {
+      expect(
+        xai.models.some((model) => model.id === retired),
+        retired,
+      ).toBe(false)
+    }
+    expect(xai.models.some((model) => model.id === "grok-4.3")).toBe(true)
+  })
+
+  it("offers verified Fireworks serverless replacements with channel-specific metadata", () => {
+    const fireworks = PROVIDER_TEMPLATES.find((provider) => provider.key === "fireworks")!
+    expect(fireworks.apiType).toBe("openai-chat")
+    for (const [id, modalities, input, output] of [
+      ["accounts/fireworks/models/deepseek-v4p1-flash", ["text", "image"], 0.3, 1.2],
+      ["accounts/fireworks/models/glm-5p3", ["text"], 1.4, 4.4],
+      ["accounts/fireworks/models/glm-5p3-flash", ["text", "image"], 0.15, 0.5],
+    ] as const) {
+      expect(fireworks.models.find((model) => model.id === id)).toMatchObject({
+        contextWindow: 1_048_576,
+        maxTokens: 131_072,
+        inputTypes: modalities,
+        reasoning: true,
+        costInput: input,
+        costOutput: output,
+      })
+    }
+    // A public serverless model never changes a saved Fire Pass router alias.
+    expect(
+      fireworks.models.some((model) => model.id === "accounts/fireworks/routers/kimi-k2p5-turbo"),
+    ).toBe(true)
+  })
+
   it("applies September 7 retirements only to their public channels", () => {
     const cerebras = PROVIDER_TEMPLATES.find((provider) => provider.key === "cerebras")!
     for (const retired of [
@@ -160,7 +243,10 @@ describe("provider template lifecycle hygiene", () => {
       "accounts/fireworks/routers/glm-5p2-fast",
       "accounts/fireworks/routers/kimi-k2p6-turbo",
     ]) {
-      expect(provider?.models.some((model) => model.id === retired), retired).toBe(false)
+      expect(
+        provider?.models.some((model) => model.id === retired),
+        retired,
+      ).toBe(false)
     }
     expect(
       provider?.models.some((model) => model.id === "accounts/fireworks/routers/kimi-k2p5-turbo"),
@@ -185,10 +271,22 @@ describe("provider template lifecycle hygiene", () => {
     expect(PROVIDER_TEMPLATES.some((provider) => provider.key === "anthropic-vertex")).toBe(false)
   })
 
-  it("keeps MiniMax M3 out of the Anthropic-compatible MiniMax template", () => {
+  it("offers stable MiniMax M3 over the verified compatible API and excludes previews", () => {
     const minimax = PROVIDER_TEMPLATES.find((provider) => provider.key === "minimax")
-    expect(minimax).toBeDefined()
-    expect(minimax?.models.some((model) => model.id === "MiniMax-M3")).toBe(false)
+    expect(minimax).toMatchObject({
+      apiType: "anthropic",
+      baseUrl: "https://api.minimax.io/anthropic",
+    })
+    expect(minimax?.models.find((model) => model.id === "MiniMax-M3")).toMatchObject({
+      inputTypes: ["text", "image"],
+      contextWindow: 1_000_000,
+      maxTokens: 131_072,
+      reasoning: true,
+      costInput: 0.3,
+      costOutput: 1.2,
+    })
+    expect(minimax?.models.some((model) => model.id === "MiniMax-M3.1-Flash-Preview")).toBe(false)
+    expect(minimax?.models.some((model) => model.id === "MiniMax-VL-01")).toBe(false)
   })
 
   it("keeps corrected GPT-5.6 prices in both OpenAI templates", () => {

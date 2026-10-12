@@ -129,9 +129,18 @@ flowchart TD
 
 模板里最值得记的是**协议归类**——大多数国内/聚合服务商都用 `openai-chat`（OpenAI 兼容），少数走原生 `anthropic`（MiniMax、Kimi Coding、Synthetic 等），OpenAI 官方与 GitHub Copilot 走 `openai-responses`。推理格式则跟着服务商走：智谱标 `zai`、通义/百炼标 `qwen`、Anthropic 系标 `anthropic`，其余多为 `openai`。这套"模板 → ApiType → ThinkingStyle"的映射就是新增服务商时要填对的三件事。
 
+#### 2026-10-12 稳定模型适配
+
+- Anthropic 直连模板新增 `claude-haiku-5-5`（1,000,000 上下文、128,000 输出，文本/图片输入）。主轮沿现有适配器使用自适应思考并请求摘要思考文本，单次请求显式设置默认自适应模式和前缀绑定，并保留签名、遮蔽块和前缀绑定的丢块策略；关闭思考时只发送 `thinking.type=disabled`，移除残留 effort，不传采样参数。Haiku 5.5 的 `xhigh` 保留原值，`minimal` 映射到 `low`，其它 Claude 5 映射不变。官方第三方兼容端点不继承直连策略。[迁移指南](https://platform.claude.com/docs/en/models/haiku-5-5/migration-guide)、[推理档位](https://platform.claude.com/docs/en/build-with-claude/effort)
+- xAI 直连 Chat 模板新增 `grok-4.7`，支持文本/图片输入与 500,000 上下文。厂商没有独立文本输出上限，预设上限以窗口为界；官方 HTTPS 端点将 `minimal` 映射到 `low`、`max` 映射到 `xhigh`。推理不能关闭，省略字段时仍使用厂商默认值。新建候选仅移除公告精确命中的五个旧 ID，既有配置不迁移。[Chat 示例](https://docs.x.ai/developers/model-capabilities/legacy/chat-completions)、[退役公告](https://docs.x.ai/developers/migration/may-15-retirement)
+- Fireworks 新增 `accounts/fireworks/models/deepseek-v4p1-flash`、`accounts/fireworks/models/glm-5p3`、`accounts/fireworks/models/glm-5p3-flash`。公开页面的模型元数据给出 1,048,576 上下文，输出预设采用官方示例 131,072 的保守上限，不据此宣称部署硬上限；两个 Flash 预设支持图片，GLM 5.3 只支持文本。使用现有 Chat 流式、工具、用量与推理参数路径，不扩展区域、Priority、Fast 或托管执行面。[Standard 定价](https://docs.fireworks.ai/serverless/pricing)
+- MiniMax 原厂 `https://api.minimax.io/anthropic` 新增稳定 `MiniMax-M3`，文本/图片、1,000,000 上下文，输出采用官方推荐的 131,072 预设（API 文档允许最大 524,288）。主轮按请求意图发送 `thinking.type=adaptive|disabled`，不传旧 `budget_tokens` 或不适用的 effort。其它 MiniMax 模型、网关和 M3.1 Preview 不继承本策略；仅移除兼容接口未声明支持的 VL-01 新建候选。视频、文件上传、Priority 和 Preview 套餐边界未扩展。基础价 $0.30/$1.20，超过 512K 输入时 $0.60/$2.40。[兼容文档](https://platform.minimax.io/docs/api-reference/text-anthropic-api)、[输出限制](https://platform.minimax.io/docs/api-reference/text-chat-openai)、[价格](https://platform.minimax.io/docs/pricing/overview)
+- Google 直连新建候选移除 2026-10-08 弃用并转向新版的 `gemini-3.7-flash` / `gemini-3.5-flash`，以及 2026-09-18 起仅限既有用户的 Gemini 2.5 三项；已有配置和网关不自动改写，替代稳定模型已在模板中。[官方变更记录](https://ai.google.dev/gemini-api/docs/changelog)
+- 新模型模板与大盘估算使用基础输入/输出价。Haiku 5.5 超过 100,000 输入令牌时为 $0.50/$2.50，Grok 4.7 超过 200K 时为 $4/$12；单组价格配置无法表达这些阶梯与缓存费，用户价格继续优先，估算不等于账单。
+
 #### 模型目录补全
 
-`provider-setup/model-catalog.ts` 聚合全部内置模板，供新增与编辑模型时的 `ModelIdCombobox` 按模型 ID、显示名或服务商名检索。目录不发起网络探测，也不代表当前端点实际支持该模型；占位模型不进入候选。同一大小写敏感 ID 只有在输入模态、上下文窗口、最大输出与推理能力一致时才合并，能力不同的来源保留独立候选。
+`provider-setup/model-catalog.ts` 聚合全部内置模板，供新增与编辑模型时的 `ModelIdCombobox` 按模型 ID、显示名或服务商名检索。目录不发起网络探测，也不代表当前端点实际支持该模型；占位模型不进入候选。搜索优先按输入 ID 的大小写完整匹配，再做不区分大小写的模糊匹配，防止原厂与网关的大小写变体排序混淆。同一大小写敏感 ID 只有在输入模态、上下文窗口、最大输出与推理能力一致时才合并，能力不同的来源保留独立候选。
 
 选择候选会填入模型 ID、显示名、输入模态、上下文窗口、最大输出和推理能力；当前服务商的端点、API 类型、凭据及模型推理参数格式保持不变。模型 ID 输入关闭系统自动纠错、自动大写和拼写检查。目录保留各来源的币种与报价，只提供当前服务商币种一致的首个报价，不作汇率转换；价格不同则先弹出来源与单价确认，取消保留原价，确认才覆盖输入与输出单价（`null` 与 `0` 语义不变）。自定义向导可选择 USD / CNY，测试与保存使用同一币种。
 

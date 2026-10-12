@@ -1312,6 +1312,38 @@ export const infrastructureTemplates: ProviderTemplate[] = [
     apiKeyPlaceholder: "fw_...",
     requiresApiKey: true,
     models: [
+      // Standard serverless rates. Output presets use the official examples'
+      // 131072-token cap; this is not a claim about the deployment hard limit.
+      {
+        id: "accounts/fireworks/models/deepseek-v4p1-flash",
+        name: "DeepSeek V4.1 Flash (Fireworks)",
+        inputTypes: ["text", "image"],
+        contextWindow: 1_048_576,
+        maxTokens: 131_072,
+        reasoning: true,
+        costInput: 0.3,
+        costOutput: 1.2,
+      },
+      {
+        id: "accounts/fireworks/models/glm-5p3",
+        name: "GLM 5.3 (Fireworks)",
+        inputTypes: ["text"],
+        contextWindow: 1_048_576,
+        maxTokens: 131_072,
+        reasoning: true,
+        costInput: 1.4,
+        costOutput: 4.4,
+      },
+      {
+        id: "accounts/fireworks/models/glm-5p3-flash",
+        name: "GLM 5.3 Flash (Fireworks)",
+        inputTypes: ["text", "image"],
+        contextWindow: 1_048_576,
+        maxTokens: 131_072,
+        reasoning: true,
+        costInput: 0.15,
+        costOutput: 0.5,
+      },
       // Remove confirmed retired serverless IDs only. Saved configs and
       // dedicated deployments remain editable; other router aliases need proof.
       {
