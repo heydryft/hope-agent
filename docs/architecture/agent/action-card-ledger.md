@@ -2,7 +2,7 @@
 
 ## 2026-10-12：安全依赖维护与新卡吸收
 
-本轮 prepare `exit=0/ok=true`，独立分支 `codex/automation-7-20261012t010115-ddaae67c`；核验基线 **cd1d63fdbed9890bdccfe24f07c951fef638c810**，时间 **2026-10-12 09:01:22（Asia/Shanghai）**。#775 已实时确认 MERGED，没有本任务待续 PR；主目录、其他作者分支与专项历史只读。交付前main经专用ref/远端/GitHub API核验为 `c188b19bfaedd8d3da0a7639c61264406906d6c3`，合入#818模型菜单修复的三处文件，保留其归属；原始基线和雷达快照不改写。PR/精确头复审/CI/合并终态以本轮交付证据为准。
+本轮 prepare `exit=0/ok=true`，独立分支 `codex/automation-7-20261012t010115-ddaae67c`；核验基线 **cd1d63fdbed9890bdccfe24f07c951fef638c810**，时间 **2026-10-12 09:01:22（Asia/Shanghai）**。#775 已实时确认 MERGED，没有本任务待续 PR；主目录、其他作者分支与专项历史只读。交付前main经专用ref/远端/GitHub API核验为 `c188b19bfaedd8d3da0a7639c61264406906d6c3`，合入#818模型菜单修复的三处文件，保留其归属；原始基线和雷达快照不改写。正式交付 [PR #819](https://github.com/shiwenwen/hope-agent/pull/819)；精确头复审/CI/合并终态以 PR 与本轮交付证据为准。
 
 ### 输入与去重
 
@@ -145,7 +145,7 @@
 | `06-SDK-07` | 部分交付 | 10-06 SDK-07 | 将 updater 降级决定收回应用配置：updater Rust/JS精确2.12.0、应用allowDowngrades=false；既有GUI回归与workspace check证据另列。未使用生产源/安装真实更新，本地签名降级manifest与完整平台安装仍待fixture；不得由renderer覆盖或回退版本门。 |
 | `06-SDK-08` | 部分交付 | 10-06 SDK-08 | 清理 lru 条件性内存安全问题：ha-core/ha-channel lru最低0.18.2、实际锁0.18.5；容量、淘汰和计量key语义保留。当前缓存回归/CI另列，无新增unsafe或生产数据；自定义panic Drop攻击验收未运行，有反证后重评。 |
 | `06-SDK-09` | 部分交付 | 10-06 SDK-09 | 更新 DOMPurify 安全下限并核查第三方配置：DOMPurify override>=3.4.16、锁3.4.16，保留现行过滤。源码未引入IN_PLACE/hook；第三方清洗/跨调用真实攻击覆盖仍待专用fixture，不称默认Markdown已有XSS复现或完全免疫。 |
-| `06-SDK-11` | 部分交付 | 10-06 SDK-11 | 替换停止维护的 mp4-muxer：现有客户端MP4迁移候选Mediabunny1.61.3（MPL-2.0元数据已核），保持harness/H.264/关键帧/时间戳；逐帧排空异步写，成功仅返最终MP4；真实封装器两帧读回与编码/写入失败清理3项通过。只供合成测试引用，生产默认仍为mp4-muxer；按来源门先取得各平台实际H.264/播放fixture再切换，质量/速度尚未测。 |
+| `06-SDK-11` | 部分交付 | 10-06 SDK-11 | 替换停止维护的 mp4-muxer：现有客户端MP4迁移候选Mediabunny1.61.3（MPL-2.0元数据已核），保持harness/H.264/关键帧/时间戳；逐帧排空异步写，成功仅返最终MP4；合成码流容器两帧读回与编码/写入失败清理3项通过。只供合成测试引用，生产默认仍为mp4-muxer；按来源门先取得各平台实际H.264/播放fixture再切换，质量/速度尚未测。 |
 | `06-SDK-13` | 待证据 | 10-06 SDK-13 | 分开评估 TypeScript 7 与 Vitest 5：TS7原生CLI与现有TypeScript AST API消费者需分开迁；Vitest5 mock/hoisting默认改变。候选版本不是兼容证据，本轮保留TS6/Vitest4，两个独立兼容分支和插件fixture通过后才迁。 |
 | `06-SDK-14` | 待决策 | 10-06 SDK-14 | 验证 React 19.3 对焦点与动效的简化：React19.3 Fragment refs/ViewTransition仅为能力PoC，无现有缺陷或可测收益；需冻结焦点、reduced-motion及WebView夹具/实验门。保持19.2.4，不为新API改虚拟列表与自动跟随。 |
 | `06-SDK-15` | 观察 | 10-06 SDK-15 | 保持 Oxc 六个 Rust crate 同步升级：Oxc六crate保持0.138.0；候选0.153跨15个pre1.0 minor，未发现当前必须迁移的调用修复。取得具体API/MSRV与编译收益证据后配对评估，不夹带Vite升级。 |
