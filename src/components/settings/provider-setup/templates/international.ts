@@ -719,8 +719,8 @@ export const internationalTemplates: ProviderTemplate[] = [
         name: "Grok 4.7",
         inputTypes: ["text", "image"],
         contextWindow: 500_000,
-        // No separate output limit; bound the preset by the context window.
-        maxTokens: 500_000,
+        // No separate output limit; reserve context for input and tool history.
+        maxTokens: 64_000,
         reasoning: true,
         // Standard rates up to 200K input; longer prompts cost $4/$12.
         costInput: 2.0,

@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **稳定模型预设补齐**：可搜索选择 Claude Haiku 5.5、Grok 4.7、MiniMax M3 和 Fireworks 的 DeepSeek V4.1 Flash、GLM 5.3 / Flash，并按官方接口适配新模型的思考参数。 (#PR)
+- **稳定模型预设补齐**：可搜索选择 Claude Haiku 5.5、Grok 4.7、MiniMax M3 和 Fireworks 的 DeepSeek V4.1 Flash、GLM 5.3 / Flash，并按官方接口适配新模型的思考参数，Grok 输出预设为输入和工具历史保留容量。 (#PR)
 
 ### Fixed
 

@@ -52,7 +52,7 @@ describe("provider template lifecycle hygiene", () => {
     expect(xai.models.find((model) => model.id === "grok-4.7")).toMatchObject({
       inputTypes: ["text", "image"],
       contextWindow: 500_000,
-      maxTokens: 500_000,
+      maxTokens: 64_000,
       reasoning: true,
       costInput: 2,
       costOutput: 6,
@@ -70,6 +70,9 @@ describe("provider template lifecycle hygiene", () => {
       ).toBe(false)
     }
     expect(xai.models.some((model) => model.id === "grok-4.3")).toBe(true)
+    const grok = xai.models.find((model) => model.id === "grok-4.7")!
+    // Output reservation must leave room for admitted prompts and tool history.
+    expect(grok.contextWindow - grok.maxTokens).toBeGreaterThan(100_000)
   })
 
   it("offers verified Fireworks serverless replacements with channel-specific metadata", () => {
