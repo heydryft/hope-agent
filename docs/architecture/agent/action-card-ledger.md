@@ -2,7 +2,7 @@
 
 ## 2026-10-12：安全依赖维护与新卡吸收
 
-本轮 prepare `exit=0/ok=true`，独立分支 `codex/automation-7-20261012t010115-ddaae67c`；核验基线 **cd1d63fdbed9890bdccfe24f07c951fef638c810**，时间 **2026-10-12 09:01:22（Asia/Shanghai）**。#775 已实时确认 MERGED，没有本任务待续 PR；主目录、其他作者分支与专项历史只读。交付前main经专用ref/远端/GitHub API核验为 `c188b19bfaedd8d3da0a7639c61264406906d6c3`，合入#818模型菜单修复的三处文件，保留其归属；原始基线和雷达快照不改写。正式交付 [PR #819](https://github.com/shiwenwen/hope-agent/pull/819)；精确头复审/CI/合并终态以 PR 与本轮交付证据为准。
+本轮 prepare `exit=0/ok=true`，独立分支 `codex/automation-7-20261012t010115-ddaae67c`；核验基线 **cd1d63fdbed9890bdccfe24f07c951fef638c810**，时间 **2026-10-12 09:01:22（Asia/Shanghai）**。#775 已实时确认 MERGED，没有本任务待续 PR；主目录、其他作者分支与专项历史只读。交付前main经专用ref/远端/GitHub API核验为 `c188b19bfaedd8d3da0a7639c61264406906d6c3`，合入#818模型菜单修复的三处文件，保留其归属；随后再次三方核验 `5d86a16ae63d6b756c78992b3b9993fdeafce555` 的14行死代码清理并合入。原始基线和雷达快照不改写。正式交付 [PR #819](https://github.com/shiwenwen/hope-agent/pull/819)；精确头复审/CI/合并终态以 PR 与本轮交付证据为准。
 
 ### 输入与去重
 
