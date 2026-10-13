@@ -123,6 +123,22 @@ pub const DEFAULT_CODEX_MODEL_ID: &str = "gpt-5.6-terra";
 pub fn get_codex_models() -> Vec<CodexModel> {
     vec![
         CodexModel {
+            id: "gpt-6.1-sol".into(),
+            name: "GPT-6.1 Sol".into(),
+        },
+        CodexModel {
+            id: "gpt-6-astra".into(),
+            name: "GPT-6 Astra".into(),
+        },
+        CodexModel {
+            id: "gpt-6-sol".into(),
+            name: "GPT-6 Sol".into(),
+        },
+        CodexModel {
+            id: "gpt-6-luna".into(),
+            name: "GPT-6 Luna".into(),
+        },
+        CodexModel {
             id: "gpt-5.6-sol".into(),
             name: "GPT-5.6 Sol".into(),
         },
@@ -135,20 +151,8 @@ pub fn get_codex_models() -> Vec<CodexModel> {
             name: "GPT-5.6 Luna".into(),
         },
         CodexModel {
-            id: "gpt-5.5".into(),
-            name: "GPT-5.5".into(),
-        },
-        CodexModel {
-            id: "gpt-5.4".into(),
-            name: "GPT-5.4".into(),
-        },
-        CodexModel {
             id: "gpt-5.3-codex".into(),
             name: "GPT-5.3 Codex".into(),
-        },
-        CodexModel {
-            id: "gpt-5.3-codex-spark".into(),
-            name: "GPT-5.3 Codex Spark".into(),
         },
         CodexModel {
             id: "gpt-5.2".into(),
@@ -235,7 +239,19 @@ pub fn is_valid_reasoning_effort(effort: &str) -> bool {
 /// Apply Astra's contract only to the verified direct HTTPS endpoint and exact
 /// model ID. A relay with a similar name may implement a different protocol.
 pub fn is_direct_openai_astra(base_url: &str, model: &str) -> bool {
-    model == "gpt-6-astra"
+    model == "gpt-6-astra" && is_direct_openai_gpt6(base_url, model)
+}
+
+pub fn is_gpt6_model(model: &str) -> bool {
+    matches!(
+        model,
+        "gpt-6-astra" | "gpt-6.1-sol" | "gpt-6-sol" | "gpt-6-luna"
+    )
+}
+
+/// Model-specific GPT-6 rules only apply to the exact official HTTPS host.
+pub fn is_direct_openai_gpt6(base_url: &str, model: &str) -> bool {
+    is_gpt6_model(model)
         && url::Url::parse(base_url).is_ok_and(|url| {
             url.scheme() == "https"
                 && url.host_str() == Some("api.openai.com")
@@ -267,6 +283,19 @@ pub fn astra_reasoning_effort(effort: Option<&str>) -> &str {
     }
 }
 
+/// The API permits none for Sol/Luna. Codex's bundled catalog starts at low.
+pub fn gpt6_api_reasoning_effort(model: &str, effort: Option<&str>) -> &'static str {
+    match effort {
+        Some("none") | None if matches!(model, "gpt-6-sol" | "gpt-6-luna") => "none",
+        Some("low" | "minimal" | "none") | None => "low",
+        Some("medium") => "medium",
+        Some("high") => "high",
+        Some("xhigh") => "xhigh",
+        Some("max") => "max",
+        _ => "medium",
+    }
+}
+
 /// Resolve the round's effort before it is frozen into RoundRequest. The
 /// generic clamp would otherwise erase Astra's max before the adapter sees it.
 pub fn provider_reasoning_effort(
@@ -290,7 +319,10 @@ pub fn provider_reasoning_effort(
         }
         | super::types::LlmProvider::OpenAIResponses {
             base_url, model, ..
-        } if is_direct_openai_astra(base_url, model) => {
+        } if is_direct_openai_gpt6(base_url, model) => {
+            Some(gpt6_api_reasoning_effort(model, effort).to_string())
+        }
+        super::types::LlmProvider::Codex { model, .. } if is_gpt6_model(model) => {
             Some(astra_reasoning_effort(effort).to_string())
         }
         _ => effort.and_then(|effort| clamp_reasoning_effort(provider.model(), effort)),
@@ -1340,6 +1372,48 @@ mod provider_effort_tests {
             Some("medium")
         );
         assert_eq!(reasoning_selection_for_turn((None, false)), None);
+    }
+
+    #[test]
+    fn gpt6_provider_efforts_are_exact_and_preserve_native_max() {
+        for model in ["gpt-6.1-sol", "gpt-6-astra", "gpt-6-sol", "gpt-6-luna"] {
+            let codex = LlmProvider::Codex {
+                access_token: "synthetic".into(),
+                account_id: "fixture".into(),
+                model: model.into(),
+            };
+            assert_eq!(
+                provider_reasoning_effort(&codex, Some("max")).as_deref(),
+                Some("max")
+            );
+            assert_eq!(
+                provider_reasoning_effort(&codex, Some("none")).as_deref(),
+                Some("low")
+            );
+            for base in [
+                "https://api.openai.com",
+                "https://relay.example",
+                "http://api.openai.com",
+                "https://api.openai.com:444",
+                "https://api.openai.com.evil.example",
+                "https://user@api.openai.com",
+            ] {
+                let direct = base == "https://api.openai.com";
+                let provider = LlmProvider::OpenAIResponses {
+                    api_key: "synthetic".into(),
+                    base_url: base.into(),
+                    model: model.into(),
+                };
+                assert_eq!(
+                    provider_reasoning_effort(&provider, Some("max")).as_deref(),
+                    Some(if direct { "max" } else { "xhigh" })
+                );
+            }
+        }
+        assert!(!is_direct_openai_gpt6(
+            "https://api.openai.com",
+            "gpt-6-sol-custom"
+        ));
     }
 
     #[test]

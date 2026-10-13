@@ -116,9 +116,13 @@ When automatically switching models across protocols (for example, when the prim
 
 ---
 
+Gateway presets also cover current stable models: OpenRouter adds the four GPT-6 models, Claude Opus / Sonnet / Haiku 5.5, Grok 4.7, GLM 5.3 / Flash, DeepSeek V4.1 Flash, MiniMax M3, and Kimi K3. Prices estimate the public catalog's base route rates; routing, caching, and long-input tiers may change the bill. A model's file or video capability does not mean Hope supports those inputs.
+
+Together adds GLM 5.3 / Flash, Kimi K3, MiniMax M3, and DeepSeek V4.1 Flash with channel-specific context and prices and a conservative **16K output preset**, not a vendor hard limit. Only text input is declared. These models use default reasoning without the GPT-OSS-only `reasoning_effort`; Together's reasoning toggle is not integrated.
+
 ## 2.4 Sign in with a ChatGPT / Codex account
 
-Don't want to enter an API key by hand? You can sign in directly with a ChatGPT account, use the GPT-5.x series as your primary chat model, and consume your subscription quota.
+Don't want to enter an API key by hand? You can sign in directly with a ChatGPT account, use GPT models as your primary chat model, and consume your subscription quota.
 
 **Sign in**: Settings → Add Provider → the "**Sign in with ChatGPT (Codex)**" primary button at the top of the first page opens the system browser to complete authorization (finish within 5 minutes). Once signed in, the configuration is saved automatically and a green "Configured" badge appears.
 
@@ -134,6 +138,9 @@ hope-agent auth codex logout         # Sign out (deletes the Codex provider and 
 **Re-sign in**: the Codex provider card's "⋮" menu has "Re-sign in" (rather than "Delete", to avoid accidental removal); when the token expires the interface also guides you to sign in again.
 
 - The specific model used after signing in can be switched in Settings; the default is the tier available across all account levels.
+- The built-in Codex catalog includes `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6-sol`, and `gpt-6-luna`. Upgrades backfill missing entries while preserving selected models, custom parameters, and disabled providers. Access still depends on your ChatGPT plan, workspace settings, and rollout.
+- Codex GPT-6 presets use the official bundled catalog's **272K** context, separately from the OpenAI API's **1.05M**. The existing **16K output reservation** is not a server output limit. GPT-6 reasoning ranges from `low` to `max`; `minimal` and “off” map to `low` on this endpoint, while “off” still hides reasoning output. `Ultra` is Codex task delegation; Hope does not send it as a reasoning parameter.
+- New defaults omit retired GPT-5.4 and GPT-5.3-Codex-Spark, plus GPT-5.5 retiring from Codex on 2026-10-14. Saved configurations remain; GPT-5.5 API presets are unaffected by this Codex retirement.
 - Codex credentials are stored only on this machine (`~/.hope-agent/credentials/auth.json`) and are never written to logs.
 - Codex sign-in and the account sign-in for [11 · MCP: connecting external tools](11-connect-and-extend.md#111-mcp-connecting-external-tools) are two completely independent mechanisms that do not affect each other.
 

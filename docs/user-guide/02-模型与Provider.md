@@ -116,9 +116,13 @@ API 类型告诉 Hope Agent 用哪套协议和服务商通信。**用内置模�
 
 ---
 
+聚合渠道也提供当前稳定模型：OpenRouter 新增 GPT-6 四项、Claude Opus / Sonnet / Haiku 5.5、Grok 4.7、GLM 5.3 / Flash、DeepSeek V4.1 Flash、MiniMax M3 和 Kimi K3。价格按公开目录的基础路由报价估算，实际账单可能受路由、缓存与长输入分档影响；模型允许的文件或视频输入不代表 Hope 已支持。
+
+Together 新增 GLM 5.3 / Flash、Kimi K3、MiniMax M3 和 DeepSeek V4.1 Flash，采用渠道公布的上下文与单价、保守 **16K 输出预设**（不是厂商硬上限）。当前只声明文本输入；沿用渠道默认推理，不发送仅适用于 GPT-OSS 的 `reasoning_effort`，未接入 Together 的推理开关。
+
 ## 2.4 用 ChatGPT / Codex 账号登录
 
-不想手填 API Key?可以用 ChatGPT 账号直接登录,把 GPT-5.x 系列当主对话模型,消耗你的订阅额度。
+不想手填 API Key?可以用 ChatGPT 账号直接登录,把 GPT 系列当主对话模型,消耗你的订阅额度。
 
 **登录**:设置 → 添加服务商 → 首页顶部「**使用 ChatGPT (Codex) 登录**」主按钮,会弹出系统浏览器完成授权(5 分钟内完成)。登录成功后自动保存配置,显示绿色「已配置」角标。
 
@@ -134,6 +138,9 @@ hope-agent auth codex logout         # 登出(会删除 Codex 服务商与本地
 **重新登录**:Codex 服务商卡片的「⋮」菜单里有「重新登录」(而不是「删除」,避免误删);token 过期时界面也会引导你重新登录。
 
 - 登录后使用的具体模型可在设置里切换,默认选择所有账号档位都可用的那一档。
+- 内建 Codex 目录已包含 `gpt-6-astra`、`gpt-6.1-sol`、`gpt-6-sol`、`gpt-6-luna`；升级时补齐缺失条目，保留已选模型、自定义参数与禁用状态。可用性仍由 ChatGPT 套餐、工作区开关及官方上线范围决定。
+- Codex 的 GPT-6 上下文预设为官方内建目录的 **272K**，与 OpenAI API 的 **1.05M** 分开；沿用 **16K 输出预留**，不是服务端输出硬上限。GPT-6 推理档位为 `low` 至 `max`；`minimal` 和“关闭”按接口映射为 `low`，“关闭”仍隐藏思考展示。`Ultra` 是 Codex 的任务委派能力，Hope 不把它当成推理请求参数发送。
+- 新目录不再提供已退役的 GPT-5.4、GPT-5.3-Codex-Spark，以及 2026-10-14 在 Codex 退役的 GPT-5.5；既有配置保留，GPT-5.5 的 API 候选不受这次 Codex 退役影响。
 - Codex 凭据只存在本机(`~/.hope-agent/credentials/auth.json`),绝不写入日志。
 - Codex 登录与 [11 · MCP 接入外部工具](11-连接与扩展.md#111-mcp接入外部工具) 的账号登录是两套完全独立的机制,互不影响。
 

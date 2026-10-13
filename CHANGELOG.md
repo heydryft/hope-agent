@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Codex GPT-6 模型**：ChatGPT 登录后可选择 GPT-6 Astra、GPT-6.1 Sol、GPT-6 Sol 和 GPT-6 Luna，保留既有默认与自定义设置；同步推理参数并清理明确退役的新建候选。 (#PR)
+- **聚合渠道模型**：补齐 OpenRouter 的 13 个最新稳定模型预设，以及 Together 的 GLM 5.3 / Flash、Kimi K3、MiniMax M3、DeepSeek V4.1 Flash；修复 Together 推理流的显示与用量兼容。 (#PR)
+
 - **稳定模型预设补齐**：可搜索选择 Claude Haiku 5.5、Grok 4.7、MiniMax M3 和 Fireworks 的 DeepSeek V4.1 Flash、GLM 5.3 / Flash，并按官方接口适配新模型的思考参数，Grok 输出预设为输入和工具历史保留容量。 (#PR)
 
 ### Fixed

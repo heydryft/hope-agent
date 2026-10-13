@@ -191,6 +191,12 @@ Google 官方 HTTPS 端点的精确 ID 将 `minimal` 调整为 `low`、`xhigh/ma
 
 workspace 直接 reqwest 为 0.13.5，明确关闭默认 features，启用原有 native-tls、HTTP/2、system-proxy、query/form 与压缩/流式能力。共享依赖仍包含 rustls；Telegram 适配器通过 `reqwest_teloxide` 保留 SDK 要求的 0.12.28 客户端，不能据直接依赖升级声称所有 HTTP 支线已统一。此边界不替代发送前 SSRF、来源授权或用量记账。
 
+#### 2026-10-14 聚合渠道覆盖补齐
+
+OpenRouter 根据公开 `/api/v1/models` 中的精确 ID、输入类型、路由上下文、输出限制、基础报价与 `tools` 支持筛选 13 项当前稳定模型；上下文取目录与当前 top provider 的较小值，输出预设最多 128K，Grok 4.7 为 64K，给输入和工具历史留出容量。只声明 Hope 已支持的 text/image，公开视频、文件能力不自动开放。基础路由报价用于估算，缓存、长输入与路由变化不代表已精确入账。
+
+Together Serverless 新增 GLM 5.3 / Flash、Kimi K3、MiniMax M3 与 DeepSeek V4.1 Flash，采用本渠道目录的上下文与单价，16K 输出为保守产品预设，非官方硬上限；只声明文本输入。模型级 `thinkingStyle: none` 避免发送仅适用于 GPT-OSS 的 OpenAI `reasoning_effort`，仍接收默认推理。Chat SSE 对字符串 `reasoning_content` 优先、其次 `reasoning`，沿用关闭思考、工具终态和真实用量的既有处理；不添加 Together 推理开关、隐藏重试或自建工具循环。模板采用当前官方 `https://api.together.ai/v1` 入口，旧用户端点不改写。来源：[模型目录](https://docs.together.ai/docs/serverless/models)、[兼容协议](https://docs.together.ai/docs/inference/openai-compatibility)、[推理](https://docs.together.ai/docs/inference/chat/reasoning)。
+
 ### 1.6 Provider 写入契约
 
 所有对 `providers` 列表与 `active_model` 的写入，必须走 `crates/ha-core/src/provider/crud.rs` 的 helper——禁止在 Tauri / HTTP / onboarding / importer / local_llm 任何路径里直接 `providers.push` / `retain` 或手写 `active_model`。每个 helper 都带一个 `source: &'static str` 审计标签，并统一经 `mutate_config` 落盘（配置读写契约见 [config-system](../infra/config-system.md)）。
@@ -476,6 +482,9 @@ SSE 事件处理：
 - **OAuth 认证**：`Authorization: Bearer {access_token}` + `chatgpt-account-id` 头
 - **终端登录**：`hope-agent auth codex login` 复用同一 PKCE loopback 流程，成功后写 `~/.hope-agent/credentials/auth.json` 并调 `ensure_codex_provider_persisted(...)`；`--no-open` 只打印 URL，适合 SSH/headless 配合 `ssh -L 1455:127.0.0.1:1455 <host>`
 - **内置模型目录三处必须同步**：`agent::config::get_codex_models()` / `provider::helpers::default_codex_models()` / `provider::crud::default_codex_model_ids()`（id 集合 + 顺序一致，单测锁长度）。`DEFAULT_CODEX_MODEL_ID` 当前是 `gpt-5.6-terra`——**不是**列表里的旗舰 `gpt-5.6-sol`。原因：GPT-5.6 按 ChatGPT 套餐分级（Free/Go 只有 Terra，Sol 需付费套餐），而这个常量会通过 `ActiveModelUpdate::Always` 套到每个新登录账号，必须选所有 Codex 账号都有的那一档
+- **GPT-6 目录与参数**：三份内建目录按相同顺序补齐 `gpt-6.1-sol`、`gpt-6-astra`、`gpt-6-sol`、`gpt-6-luna`。依据 [Codex 官方内建目录](https://github.com/openai/codex/blob/e762c05bd686dd1eb3595aef2e14cc37c739f401/codex-rs/models-manager/models.json) 使用 272000 上下文、text/image 与订阅估算价 0，保留既有 16384 输出预留（Codex 不接收 `max_output_tokens`）。补齐缺失模型仍由既有 `ensure_codex_provider` / CRUD 写入口执行，保留用户已选模型、限制、其它条目和禁用状态；套餐和工作区权限由服务端裁决。
+- **GPT-6 推理差异**：Codex 四项只发送 `low/medium/high/xhigh/max`，`minimal/none/未指定 → low`，不发送温度；关闭思考仍由既有展示守卫丢弃推理输出。API Responses 则只在精确 `api.openai.com` HTTPS 默认端口应用原厂规则，Sol/Luna 的显式关闭发送 `none`，Astra/6.1 Sol 的关闭发送 `low`，保留 `max`，推理启用时省略温度；网关与未知 ID 保持既有映射。官方 Codex `ultra` 是客户端委派模式，本轮不扩展 Hope 的工具或调度权限。
+- **Codex 生命周期**：新目录移除 GPT-5.4、GPT-5.3-Codex-Spark 与 2026-10-14 退役的 GPT-5.5；`ensure_codex_provider` 不删除已保存的旧条目，不自动迁移 active/fallback。Codex 退役不传播到 OpenAI API 目录。证据见 [官方模型](https://learn.chatgpt.com/docs/models) 与 [官方变更日志](https://learn.chatgpt.com/docs/changelog)。新 Sign in with ChatGPT 的公共 API token-sharing 流程使用另一授权契约，本轮不将现有 Codex PKCE 凭据或端点改成该流程。
 - **重试与降级**：Codex adapter 的一次 dispatch claim 严格只发送一次，不在内部隐藏传输层重试。明确未发送或收到完整 HTTP 拒绝的 retryable 错误由外层执行器按 policy 退避；每次重试都重新准备精确正文、建立新计划并取得新 claim。收到响应前发送状态未知、流中断或 WAL 收敛失败统一进入 `DispatchUnknown`，禁止自动重发；Codex 仍不参与 profile 轮换，只有**非 terminal** 错误耗尽当前模型后才允许外层 fallback model 链换模型
 - **不参与 profile 轮换**：OAuth 无 api_key profile，执行器硬编码跳过 Codex 的 profile 选择；凭据失败直接走标准失败路径到下一模型
 - **构造期失败保活**：`ensure_codex_provider_persisted` 保证 token 缺失或构造异常时配置仍持久化，下次手动登录即可补回，不会被静默移除

@@ -12,6 +12,60 @@ const RETIRED_DIRECT_MODEL_IDS = [
 ]
 
 describe("provider template lifecycle hygiene", () => {
+  it("offers current stable gateway models with verified channel metadata", () => {
+    const together = PROVIDER_TEMPLATES.find((p) => p.key === "together")!
+    for (const [id, context, input, output] of [
+      ["zai-org/GLM-5.3", 1048575, 1.4, 4.4],
+      ["zai-org/GLM-5.3-Flash", 1048575, 0.15, 0.5],
+      ["moonshotai/Kimi-K3", 1048576, 2.7, 13.5],
+      ["MiniMaxAI/MiniMax-M3", 524288, 0.3, 1.2],
+      ["deepseek-ai/DeepSeek-V4.1-Flash", 1000000, 0.3, 1.2],
+    ] as const) {
+      expect(together.models.find((m) => m.id === id)).toMatchObject({
+        inputTypes: ["text"],
+        contextWindow: context,
+        maxTokens: 16384,
+        costInput: input,
+        costOutput: output,
+        thinkingStyle: "none",
+      })
+    }
+    const router = PROVIDER_TEMPLATES.find((p) => p.key === "openrouter")!
+    const ids = [
+      "openai/gpt-6-astra",
+      "openai/gpt-6.1-sol",
+      "openai/gpt-6-sol",
+      "openai/gpt-6-luna",
+      "anthropic/claude-opus-5.5",
+      "anthropic/claude-sonnet-5.5",
+      "anthropic/claude-haiku-5.5",
+      "x-ai/grok-4.7",
+      "z-ai/glm-5.3",
+      "z-ai/glm-5.3-flash",
+      "deepseek/deepseek-v4.1-flash",
+      "minimax/minimax-m3",
+      "moonshotai/kimi-k3",
+    ]
+    for (const id of ids) {
+      const model = router.models.find((m) => m.id === id)!
+      expect(model, id).toBeDefined()
+      expect(model.costInput, id).toBeGreaterThan(0)
+      expect(model.contextWindow - model.maxTokens, id).toBeGreaterThan(100_000)
+      expect(model.inputTypes, id).not.toContain("video")
+      expect(model.inputTypes, id).not.toContain("file")
+    }
+    expect(router.models.find((m) => m.id === "minimax/minimax-m3")).toMatchObject({
+      contextWindow: 524288,
+      thinkingStyle: "none",
+    })
+    // Direct OpenAI tool calls continue to use Responses, rather than a Chat preset.
+    expect(
+      PROVIDER_TEMPLATES.find((p) => p.key === "openai-chat")?.models.some((m) =>
+        m.id.startsWith("gpt-6"),
+      ),
+    ).toBe(false)
+  })
+
   it("keeps deprecated and existing-user-only Gemini models out of new direct templates", () => {
     const google = PROVIDER_TEMPLATES.find((provider) => provider.key === "google-gemini")!
     for (const id of [
