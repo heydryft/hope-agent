@@ -283,17 +283,18 @@ pub fn astra_reasoning_effort(effort: Option<&str>) -> &str {
     }
 }
 
-/// The API permits none for Sol/Luna. Codex's bundled catalog starts at low.
-pub fn gpt6_api_reasoning_effort(model: &str, effort: Option<&str>) -> &'static str {
-    match effort {
-        Some("none") | None if matches!(model, "gpt-6-sol" | "gpt-6-luna") => "none",
-        Some("low" | "minimal" | "none") | None => "low",
-        Some("medium") => "medium",
-        Some("high") => "high",
-        Some("xhigh") => "xhigh",
-        Some("max") => "max",
+/// Preserve an unset effort so the API chooses its documented model default.
+/// Sol/Luna permit an explicit none; Astra/6.1 Sol require at least low.
+pub fn gpt6_api_reasoning_effort(model: &str, effort: Option<&str>) -> Option<&'static str> {
+    Some(match effort? {
+        "none" if matches!(model, "gpt-6-sol" | "gpt-6-luna") => "none",
+        "low" | "minimal" | "none" => "low",
+        "medium" => "medium",
+        "high" => "high",
+        "xhigh" => "xhigh",
+        "max" => "max",
         _ => "medium",
-    }
+    })
 }
 
 /// Resolve the round's effort before it is frozen into RoundRequest. The
@@ -320,10 +321,10 @@ pub fn provider_reasoning_effort(
         | super::types::LlmProvider::OpenAIResponses {
             base_url, model, ..
         } if is_direct_openai_gpt6(base_url, model) => {
-            Some(gpt6_api_reasoning_effort(model, effort).to_string())
+            gpt6_api_reasoning_effort(model, effort).map(str::to_string)
         }
         super::types::LlmProvider::Codex { model, .. } if is_gpt6_model(model) => {
-            Some(astra_reasoning_effort(effort).to_string())
+            effort.map(|effort| astra_reasoning_effort(Some(effort)).to_string())
         }
         _ => effort.and_then(|effort| clamp_reasoning_effort(provider.model(), effort)),
     }
@@ -1389,6 +1390,21 @@ mod provider_effort_tests {
             assert_eq!(
                 provider_reasoning_effort(&codex, Some("none")).as_deref(),
                 Some("low")
+            );
+            assert_eq!(provider_reasoning_effort(&codex, None), None);
+            let direct = LlmProvider::OpenAIResponses {
+                api_key: "synthetic".into(),
+                base_url: "https://api.openai.com".into(),
+                model: model.into(),
+            };
+            assert_eq!(provider_reasoning_effort(&direct, None), None);
+            assert_eq!(
+                provider_reasoning_effort(&direct, Some("none")).as_deref(),
+                Some(if matches!(model, "gpt-6-sol" | "gpt-6-luna") {
+                    "none"
+                } else {
+                    "low"
+                })
             );
             for base in [
                 "https://api.openai.com",

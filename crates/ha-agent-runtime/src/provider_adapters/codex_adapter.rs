@@ -70,8 +70,13 @@ fn build_codex_request(
 ) -> (ResponsesRequest, Vec<Value>) {
     let gpt6 = crate::agent::config::is_gpt6_model(model);
     let reasoning = if gpt6 {
-        Some(super::super::api_types::ReasoningConfig {
-            effort: crate::agent::config::astra_reasoning_effort(req.reasoning_effort).to_string(),
+        let requested = if req.reasoning_disabled {
+            Some("none")
+        } else {
+            req.reasoning_effort
+        };
+        requested.map(|effort| super::super::api_types::ReasoningConfig {
+            effort: crate::agent::config::astra_reasoning_effort(Some(effort)).to_string(),
             summary: reasoning
                 .and_then(|r| r.summary)
                 .filter(|_| !req.reasoning_disabled),
@@ -462,17 +467,22 @@ mod tests {
         req.temperature = Some(0.2);
         for model in ["gpt-6.1-sol", "gpt-6-astra", "gpt-6-sol", "gpt-6-luna"] {
             for (effort, expected) in [
-                (None, "low"),
-                (Some("none"), "low"),
-                (Some("minimal"), "low"),
-                (Some("max"), "max"),
-                (Some("xhigh"), "xhigh"),
+                (None, None),
+                (Some("none"), Some("low")),
+                (Some("minimal"), Some("low")),
+                (Some("max"), Some("max")),
+                (Some("xhigh"), Some("xhigh")),
             ] {
                 req.reasoning_effort = effort;
                 let (request, _) = build_codex_request(model, None, &req);
                 let body = serde_json::to_value(request).unwrap();
                 assert_eq!(body["model"], model);
-                assert_eq!(body["reasoning"]["effort"], expected);
+                assert_eq!(
+                    body.get("reasoning")
+                        .and_then(|r| r.get("effort"))
+                        .and_then(serde_json::Value::as_str),
+                    expected
+                );
                 assert_eq!(body["tools"], serde_json::json!(tools));
                 assert_eq!(body["store"], false);
                 assert_eq!(body["stream"], true);
@@ -481,6 +491,11 @@ mod tests {
                 assert!(body.get("prompt_cache_options").is_none());
             }
         }
+        req.reasoning_effort = None;
+        req.reasoning_disabled = true;
+        let (request, _) = build_codex_request("gpt-6-luna", None, &req);
+        assert_eq!(request.reasoning.unwrap().effort, "low");
+        req.reasoning_disabled = false;
         req.is_final_round = true;
         let (request, _) = build_codex_request("gpt-6.1-sol", None, &req);
         assert!(request.tools.is_none());
