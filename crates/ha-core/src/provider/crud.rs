@@ -1246,12 +1246,12 @@ mod tests {
         apply_codex_active_model_update(
             &mut cfg,
             &provider_id,
-            ActiveModelUpdate::Always("gpt-5.4".into()),
+            ActiveModelUpdate::Always("gpt-6.1-sol".into()),
         )
         .unwrap();
 
         assert!(cfg.providers[0].enabled);
-        assert_active_model(&cfg, &provider_id, "gpt-5.4");
+        assert_active_model(&cfg, &provider_id, "gpt-6.1-sol");
     }
 
     #[test]
