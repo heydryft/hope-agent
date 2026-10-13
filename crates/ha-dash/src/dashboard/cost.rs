@@ -248,7 +248,7 @@ pub(super) fn estimate_cost(model_id: &str, input_tokens: u64, output_tokens: u6
             (0.6, 3.0)
         }
         // MiniMax
-        m if m == "MiniMax-M3" => (0.3, 1.2),
+        "MiniMax-M3" => (0.3, 1.2),
         // Gateway routes keep their own pricing; do not reprice the family.
         m if m.contains("MiniMax-M3") || m.contains("minimax-m3") => (0.6, 2.4),
         m if m.contains("MiniMax-M2.7-highspeed") => (0.6, 2.4),
