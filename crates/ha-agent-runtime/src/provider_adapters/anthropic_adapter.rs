@@ -248,7 +248,12 @@ fn build_anthropic_body(
         // M3 supports a toggle, not manual budgets or effort levels. The
         // M3.1 preview policy must not be inferred from this stable model.
         let disabled = req.reasoning_disabled || req.reasoning_effort == Some("none");
-        body["thinking"] = json!({"type": if disabled { "disabled" } else { "adaptive" }});
+        if disabled {
+            body["thinking"] = json!({"type": "disabled"});
+        } else if effective_effort.is_some() {
+            body["thinking"] = json!({"type": "adaptive"});
+        }
+        // Omission preserves M3's default off for callers without an override.
     }
     if is_first_party_anthropic(base_url)
         && model.to_ascii_lowercase().starts_with("claude-haiku-5-5")
@@ -1843,12 +1848,16 @@ mod tests {
             req.reasoning_effort = effort;
             let (body, _, _) =
                 build_anthropic_body("https://api.minimax.io/anthropic", "MiniMax-M3", &req);
-            let expected = if effort == Some("none") {
-                "disabled"
+            if effort.is_none() {
+                assert!(body.get("thinking").is_none());
             } else {
-                "adaptive"
-            };
-            assert_eq!(body["thinking"], json!({"type": expected}));
+                let expected = if effort == Some("none") {
+                    "disabled"
+                } else {
+                    "adaptive"
+                };
+                assert_eq!(body["thinking"], json!({"type": expected}));
+            }
             assert!(body.get("output_config").is_none());
             assert_eq!(body["temperature"], 0.2);
         }
@@ -1857,7 +1866,12 @@ mod tests {
         let (body, _, _) =
             build_anthropic_body("https://api.minimax.io/anthropic", "MiniMax-M3", &req);
         assert_eq!(body["thinking"], json!({"type": "disabled"}));
+        req.reasoning_effort = None;
+        let (body, _, _) =
+            build_anthropic_body("https://api.minimax.io/anthropic", "MiniMax-M3", &req);
+        assert_eq!(body["thinking"], json!({"type": "disabled"}));
         req.reasoning_disabled = false;
+        req.reasoning_effort = Some("max");
         for (endpoint, model) in [
             ("https://api.minimax.io.example/anthropic", "MiniMax-M3"),
             ("http://api.minimax.io/anthropic", "MiniMax-M3"),

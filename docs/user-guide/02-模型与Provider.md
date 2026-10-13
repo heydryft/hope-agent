@@ -120,6 +120,8 @@ API 类型告诉 Hope Agent 用哪套协议和服务商通信。**用内置模�
 
 Together 新增 GLM 5.3 / Flash、Kimi K3、MiniMax M3 和 DeepSeek V4.1 Flash，采用渠道公布的上下文与单价、保守 **16K 输出预设**（不是厂商硬上限）。当前只声明文本输入；沿用渠道默认推理，不发送仅适用于 GPT-OSS 的 `reasoning_effort`，未接入 Together 的推理开关。
 
+MiniMax M3 未设置思考强度时保留官方默认关闭，选择强度才启用自适应思考，明确关闭则发送关闭参数。
+
 ## 2.4 用 ChatGPT / Codex 账号登录
 
 不想手填 API Key?可以用 ChatGPT 账号直接登录,把 GPT 系列当主对话模型,消耗你的订阅额度。

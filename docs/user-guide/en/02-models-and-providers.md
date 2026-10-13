@@ -120,6 +120,8 @@ Gateway presets also cover current stable models: OpenRouter adds the four GPT-6
 
 Together adds GLM 5.3 / Flash, Kimi K3, MiniMax M3, and DeepSeek V4.1 Flash with channel-specific context and prices and a conservative **16K output preset**, not a vendor hard limit. Only text input is declared. These models use default reasoning without the GPT-OSS-only `reasoning_effort`; Together's reasoning toggle is not integrated.
 
+MiniMax M3 keeps its default thinking off when effort is unset. Selecting an effort enables adaptive thinking; explicitly choosing off sends the disabled setting.
+
 ## 2.4 Sign in with a ChatGPT / Codex account
 
 Don't want to enter an API key by hand? You can sign in directly with a ChatGPT account, use GPT models as your primary chat model, and consume your subscription quota.
