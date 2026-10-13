@@ -317,8 +317,10 @@ pub fn provider_reasoning_effort(
         ),
         super::types::LlmProvider::OpenAIChat {
             base_url, model, ..
+        } if is_direct_openai_astra(base_url, model) => {
+            Some(astra_reasoning_effort(effort).to_string())
         }
-        | super::types::LlmProvider::OpenAIResponses {
+        super::types::LlmProvider::OpenAIResponses {
             base_url, model, ..
         } if is_direct_openai_gpt6(base_url, model) => {
             gpt6_api_reasoning_effort(model, effort).map(str::to_string)
@@ -1392,6 +1394,20 @@ mod provider_effort_tests {
                 Some("low")
             );
             assert_eq!(provider_reasoning_effort(&codex, None), None);
+            // New Responses rules must not leak to unimplemented Chat contracts.
+            if model != "gpt-6-astra" {
+                let chat = LlmProvider::OpenAIChat {
+                    api_key: "synthetic".into(),
+                    base_url: "https://api.openai.com".into(),
+                    model: model.into(),
+                };
+                assert_eq!(
+                    provider_reasoning_effort(&chat, Some("max")).as_deref(),
+                    Some("xhigh")
+                );
+                assert_eq!(provider_reasoning_effort(&chat, Some("none")), None);
+                assert_eq!(provider_reasoning_effort(&chat, None), None);
+            }
             let direct = LlmProvider::OpenAIResponses {
                 api_key: "synthetic".into(),
                 base_url: "https://api.openai.com".into(),
