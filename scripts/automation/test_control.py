@@ -157,6 +157,10 @@ class ControlTests(unittest.TestCase):
                     module.secret_check(text.encode())
                 self.assertNotIn(value, str(error.exception))
 
+    def test_bearer_documentation_does_not_block_historical_archive_recovery(self):
+        for value in ["QR login obtains iLink Bearer bot_token", "Bearer Cloudflare Token"]:
+            module.secret_check(value.encode())
+
     def test_invalid_timestamp_never_leaks_a_credential_through_parser_errors(self):
         archive = self.archive()
         path = archive / "data/2026/report.json"
