@@ -126,6 +126,30 @@ class ControlTests(unittest.TestCase):
             module.secret_check(value.encode())
         self.assertNotIn(value, str(error.exception))
 
+    def test_recovery_preserves_allowlisted_progress_without_copying_arbitrary_state(self):
+        for name in ["prepare.py", "control.py", "README.md"]:
+            (self.runtime / name).write_text("fixture\n")
+        worktree = self.root / "repo"
+        for name in ["docs/architecture/agent/action-card-ledger.md", ".github/dependabot.yml"]:
+            path = worktree / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("fixture\n")
+        self.control.state.mkdir()
+        (self.control.state / "decision-queue.json").write_text('{"items":[]}')
+        (self.control.state / "action-queue.json").write_text('{"cards":[]}')
+        (self.control.state / "unrelated-private.json").write_text('"excluded"')
+        runtime = Mock()
+        runtime.manifest.return_value = (None, None, {"task_id": "code", "state": "prepared",
+            "worktree": str(worktree), "baseline_sha": "a" * 40})
+        with patch.object(self.control, "runtime", return_value=runtime):
+            receipt = self.control.recovery(self.root / "run")
+        records = json.loads((Path(receipt["backup"]) / "manifest.json").read_text())["files"]
+        paths = {record["path"] for record in records}
+        self.assertIn("runtime/control-state/decision-queue.json", paths)
+        self.assertIn("runtime/control-state/action-queue.json", paths)
+        self.assertFalse(any("unrelated-private" in path for path in paths))
+        self.assertEqual(receipt["files"], receipt["restored_files"])
+
     def test_writer_lease_never_steals_another_owner_even_after_time_passes(self):
         runtime = Mock()
         runtime.manifest.side_effect = lambda p: (None, None, {"state": "prepared", "task_id": "code"})

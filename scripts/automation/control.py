@@ -414,6 +414,12 @@ class Control:
         for name in ["policy.json", "tasks.json", "prepare.py", "control.py", "README.md"]:
             path = safe_relative(self.root, name)
             files["runtime/" + name] = path
+        # Reconstructable health scans are excluded; preserve only owned progress contracts.
+        for name in ["decision-queue.json", "action-queue.json", "dependency-status.json",
+                     "regression-status.json", "retry-state.json"]:
+            path = safe_relative(self.root, "control-state/" + name)
+            if path.is_file():
+                files["runtime/control-state/" + name] = path
         for task in self.policy["task_ids"]:
             path = safe_relative(self.codex, "automations/" + task + "/automation.toml")
             if path.exists():
@@ -445,7 +451,7 @@ class Control:
                 records.append({"path": relative, "sha256": digest(data), "bytes": len(data)})
             manifest = {"schema_version": "hope-automation-recovery.v1", "created_at": now().isoformat(),
                         "baseline_sha": run["baseline_sha"], "files": records,
-                        "scope": "project operations only; no user database, credentials, git metadata or caches"}
+                        "scope": "project operations and allowlisted progress contracts only; no user database, credentials, git metadata or caches"}
             atomic_json(destination / "manifest.json", manifest)
             with tempfile.TemporaryDirectory(prefix="restore-", dir=str(self.state)) as temp:
                 self.verify_restore(destination, Path(temp), manifest)
