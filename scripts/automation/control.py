@@ -88,23 +88,39 @@ def archive_state(directory):
     """Accept legacy indexes for reading, but require immutable targets and matching dates."""
     root = Path(directory).resolve()
     result = {"directory": str(root), "status": "missing"}
-    if not (root / "LATEST.json").is_file() or not (root / "LATEST.md").is_file():
+    latest_path = safe_relative(root, "LATEST.json")
+    report_path = safe_relative(root, "LATEST.md")
+    if not latest_path.is_file() or not report_path.is_file():
         return result
-    latest = json.loads((root / "LATEST.json").read_text())
-    latest_bytes = (root / "LATEST.json").read_bytes()
-    report_bytes = (root / "LATEST.md").read_bytes()
+    latest = json.loads(latest_path.read_text())
+    latest_bytes = latest_path.read_bytes()
+    report_bytes = report_path.read_bytes()
     index = not REQUIRED.issubset(latest)
     if index:
         data = safe_relative(root, latest["data"])
         report = safe_relative(root, latest["report"])
     else:
-        matches = [p for p in (root / "data").glob("[0-9][0-9][0-9][0-9]/*.json")
-                   if p.is_file() and not p.is_symlink() and p.read_bytes() == latest_bytes]
-        reports = [p for p in (root / "reports").glob("[0-9][0-9][0-9][0-9]/*.md")
-                   if p.is_file() and not p.is_symlink() and p.read_bytes() == report_bytes]
+        def matches_in(folder, suffix, content):
+            matches = []
+            base = safe_relative(root, folder)
+            for year in base.glob("[0-9][0-9][0-9][0-9]"):
+                safe_relative(root, year.relative_to(root))
+                if not year.is_dir():
+                    continue
+                for candidate in year.glob("*" + suffix):
+                    safe_relative(root, candidate.relative_to(root))
+                    if candidate.is_file() and candidate.read_bytes() == content:
+                        matches.append(candidate)
+            return matches
+        matches = matches_in("data", ".json", latest_bytes)
+        reports = matches_in("reports", ".md", report_bytes)
         if len(matches) != 1 or len(reports) != 1:
             raise ValueError("LATEST does not match exactly one immutable pair")
         data, report = matches[0], reports[0]
+    for path, folder, suffix in [(data, "data", ".json"), (report, "reports", ".md")]:
+        parts = path.relative_to(root).parts
+        if len(parts) != 3 or parts[0] != folder or not re.fullmatch(r"\d{4}", parts[1]) or path.suffix != suffix:
+            raise ValueError("archive target is outside the immutable year layout")
     payload_bytes, markdown = data.read_bytes(), report.read_bytes()
     if data.stem != report.stem or data.parent.name != report.parent.name:
         raise ValueError("LATEST contains a mixed immutable report/data pair")

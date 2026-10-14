@@ -92,6 +92,21 @@ class ControlTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             module.safe_relative(self.runtime, "link/value.json")
 
+    def test_archive_reader_rejects_latest_and_year_directory_symlinks(self):
+        archive = self.archive()
+        latest = archive / "LATEST.json"
+        outside = self.root / "outside.json"
+        outside.write_bytes(latest.read_bytes())
+        latest.unlink()
+        latest.symlink_to(outside)
+        with self.assertRaisesRegex(ValueError, "symlink"):
+            module.archive_state(archive)
+        latest.unlink()
+        latest.write_bytes(outside.read_bytes())
+        (archive / "data/2027").symlink_to(archive / "data/2026", target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, "symlink"):
+            module.archive_state(archive)
+
     def test_restore_rejects_tampering_and_traversal_before_claiming_success(self):
         source, target = self.root / "source", self.root / "target"
         source.mkdir()
