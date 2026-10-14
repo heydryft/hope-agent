@@ -62,6 +62,8 @@ action_items、evidence_gaps、no_material_change。读取端兼容已有索引�
 
 运行 `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/automation -p 'test_*.py'`
 验证归档一致性、历史保留、路径穿越、符号链接、篡改、凭据拒绝、归属和互斥。
+文件锁使用 POSIX `flock` 或 Windows 字节锁；Windows 没有符号链接创建权限时，
+仅相应实链夹具跳过，其余控制验证继续运行。
 该普通单测在 pre-push 与既有 Lint job 中运行，不增加门禁名称或专项评测。
 
 本机控制状态在受控运行目录的 `control-state/`；归档恢复证据在 `recovery/`。

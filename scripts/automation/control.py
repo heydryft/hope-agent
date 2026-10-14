@@ -3,7 +3,6 @@
 import argparse
 import contextlib
 import datetime as dt
-import fcntl
 import hashlib
 import importlib.util
 import json
@@ -16,6 +15,15 @@ import subprocess
 import sys
 import tempfile
 import uuid
+
+try:
+    import msvcrt
+except ImportError:
+    msvcrt = None
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
 
 REPOSITORY = "shiwenwen/hope-agent"
 REQUIRED = {"task_name", "generated_at", "baseline", "scope", "sources", "changes",
@@ -130,6 +138,12 @@ def archive_state(directory):
         raise ValueError("immutable data is missing required fields: " + ",".join(sorted(missing)))
     if latest.get("generated_at") != payload["generated_at"]:
         raise ValueError("index and immutable generation times differ")
+    generated_at = payload["generated_at"]
+    if not isinstance(generated_at, str):
+        raise ValueError("generated_at must be an ISO timestamp")
+    generated = dt.datetime.fromisoformat(generated_at.replace("Z", "+00:00"))
+    if str(generated.year) != data.parent.name:
+        raise ValueError("immutable directory year differs from generated_at")
     if not isinstance(payload["sources"], list) or not isinstance(payload["action_items"], list):
         raise ValueError("invalid sources or action_items schema")
     secret_check(payload_bytes)
@@ -151,12 +165,25 @@ class Control:
     @contextlib.contextmanager
     def lock(self):
         self.state.mkdir(parents=True, exist_ok=True)
-        with (self.state / "control.lock").open("a") as stream:
-            fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        with (self.state / "control.lock").open("a+") as stream:
+            if msvcrt is not None:
+                if os.fstat(stream.fileno()).st_size == 0:
+                    stream.write("\0")
+                    stream.flush()
+                stream.seek(0)
+                msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+            elif fcntl is not None:
+                fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            else:
+                raise RuntimeError("no supported file locking backend")
             try:
                 yield
             finally:
-                fcntl.flock(stream, fcntl.LOCK_UN)
+                if msvcrt is not None:
+                    stream.seek(0)
+                    msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
+                else:
+                    fcntl.flock(stream, fcntl.LOCK_UN)
 
     def task(self, task):
         if not re.fullmatch(r"[a-z0-9-]+", task) or task not in self.policy["task_ids"]:
@@ -324,7 +351,10 @@ class Control:
                     break
                 after = info["endCursor"]
             protections = gh(["api", "repos/" + REPOSITORY + "/rules/branches/main"])
-            rules = gh(["api", "--paginate", "repos/" + REPOSITORY + "/rulesets?includes_parents=true"])
+            pages = gh(["api", "--paginate", "--slurp", "repos/" + REPOSITORY + "/rulesets?includes_parents=true"])
+            if not isinstance(pages, list) or any(not isinstance(page, list) for page in pages):
+                raise RuntimeError("ruleset pagination returned an incomplete shape")
+            rules = [rule for page in pages for rule in page]
             workflows = {}
             for sha in sorted({pr["headRefOid"] for pr in prs}):
                 # A workflow can change approval status without creating any check runs.

@@ -11,6 +11,14 @@ spec.loader.exec_module(module)
 
 
 class ControlTests(unittest.TestCase):
+    def symlink(self, link, target, directory=False):
+        try:
+            link.symlink_to(target, target_is_directory=directory)
+        except OSError as error:
+            if getattr(error, "winerror", None) == 1314:
+                self.skipTest("Windows symlink privilege is unavailable; other controls still run")
+            raise
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -82,13 +90,20 @@ class ControlTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "mixed immutable"):
             module.archive_state(archive)
 
+    def test_immutable_year_must_match_generation_timestamp(self):
+        archive = self.archive()
+        for folder in ["data", "reports"]:
+            (archive / folder / "2026").rename(archive / folder / "2027")
+        with self.assertRaisesRegex(ValueError, "year differs"):
+            module.archive_state(archive)
+
     def test_path_traversal_and_symlink_are_rejected(self):
         with self.assertRaises(ValueError):
             module.safe_relative(self.root, "../private.json")
         outside = self.root / "outside"
         outside.mkdir()
         link = self.runtime / "link"
-        link.symlink_to(outside, target_is_directory=True)
+        self.symlink(link, outside, directory=True)
         with self.assertRaises(ValueError):
             module.safe_relative(self.runtime, "link/value.json")
 
@@ -98,12 +113,12 @@ class ControlTests(unittest.TestCase):
         outside = self.root / "outside.json"
         outside.write_bytes(latest.read_bytes())
         latest.unlink()
-        latest.symlink_to(outside)
+        self.symlink(latest, outside)
         with self.assertRaisesRegex(ValueError, "symlink"):
             module.archive_state(archive)
         latest.unlink()
         latest.write_bytes(outside.read_bytes())
-        (archive / "data/2027").symlink_to(archive / "data/2026", target_is_directory=True)
+        self.symlink(archive / "data/2027", archive / "data/2026", directory=True)
         with self.assertRaisesRegex(ValueError, "symlink"):
             module.archive_state(archive)
 
@@ -159,6 +174,15 @@ class ControlTests(unittest.TestCase):
             self.assertFalse(self.control.lease(str(self.root / "two"), release=True)["ok"])
             self.assertTrue(self.control.lease(str(self.root / "one"), release=True)["ok"])
             self.assertTrue(self.control.lease(str(self.root / "two"))["ok"])
+
+    def test_windows_lock_initializes_one_byte_and_unlocks_after_exception(self):
+        backend = Mock(LK_NBLCK=1, LK_UNLCK=2)
+        with patch.object(module, "msvcrt", backend), patch.object(module, "fcntl", None):
+            with self.assertRaisesRegex(ValueError, "fixture"):
+                with self.control.lock():
+                    self.assertEqual((self.control.state / "control.lock").read_bytes(), b"\0")
+                    raise ValueError("fixture")
+        self.assertEqual([c.args[1:] for c in backend.locking.call_args_list], [(1, 1), (2, 1)])
 
     def test_closed_owner_can_release_without_reopening_missing_worktree(self):
         runtime = Mock()
@@ -241,6 +265,26 @@ class ControlTests(unittest.TestCase):
             status["conclusion"] = "failure"
             second = module.digest(self.control.remote_observation("pr"))
         self.assertNotEqual(first, second)
+
+    def test_all_ruleset_pages_participate_in_the_pr_fingerprint(self):
+        self.control.policy["excluded_pr_authors"] = []
+        repo = {"data": {"repository": {"defaultBranchRef": {"name": "main"},
+            "pullRequests": {"pageInfo": {"hasNextPage": False}, "nodes": []}}}}
+        second_page = {"id": 2, "enforcement": "active"}
+        calls = []
+        def response(args):
+            calls.append(args)
+            if args[1] == "graphql":
+                return repo
+            if "/rulesets?" in args[-1]:
+                return [[{"id": 1}], [second_page.copy()]]
+            return []
+        with patch.object(module, "gh", side_effect=response):
+            first = self.control.remote_observation("pr")
+            second_page["enforcement"] = "disabled"
+            second = self.control.remote_observation("pr")
+        self.assertNotEqual(first["ruleset_digest"], second["ruleset_digest"])
+        self.assertTrue(any("--paginate" in args and "--slurp" in args for args in calls))
 
 
 if __name__ == "__main__":
