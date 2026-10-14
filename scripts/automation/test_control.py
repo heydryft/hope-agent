@@ -137,9 +137,12 @@ class ControlTests(unittest.TestCase):
 
     def test_secret_detector_withholds_values(self):
         value = "ghp_" + "a" * 36
-        with self.assertRaises(ValueError) as error:
-            module.secret_check(value.encode())
-        self.assertNotIn(value, str(error.exception))
+        escaped = value.replace("a" * 36, "\\u0061" * 36)
+        for text in [value, '{"value":"' + escaped + '"}',
+                     '{"value":"' + escaped + '","value":"clean"}']:
+            with self.subTest(encoded=text != value), self.assertRaises(ValueError) as error:
+                module.secret_check(text.encode())
+            self.assertNotIn(value, str(error.exception))
 
     def test_invalid_timestamp_never_leaks_a_credential_through_parser_errors(self):
         archive = self.archive()
@@ -147,9 +150,23 @@ class ControlTests(unittest.TestCase):
         payload = json.loads(path.read_text())
         value = "ghp_" + "a" * 36
         payload["generated_at"] = value
-        encoded = json.dumps(payload).encode()
-        path.write_bytes(encoded)
-        (archive / "LATEST.json").write_bytes(encoded)
+        for escaped in [False, True]:
+            text = json.dumps(payload)
+            if escaped:
+                text = text.replace("a" * 36, "\\u0061" * 36)
+            path.write_bytes(text.encode())
+            (archive / "LATEST.json").write_bytes(text.encode())
+            with self.subTest(escaped=escaped), self.assertRaisesRegex(ValueError, "credential-like") as error:
+                module.archive_state(archive)
+            self.assertNotIn(value, str(error.exception))
+
+    def test_invalid_generation_timestamp_never_echoes_arbitrary_input(self):
+        archive = self.archive()
+        payload = json.loads((archive / "LATEST.json").read_text())
+        value = "private-context-that-is-not-a-date"
+        payload["generated_at"] = value
+        for path in [archive / "LATEST.json", archive / "data/2026/report.json"]:
+            path.write_text(json.dumps(payload))
         with self.assertRaises(ValueError) as error:
             module.archive_state(archive)
         self.assertNotIn(value, str(error.exception))
@@ -298,6 +315,23 @@ class ControlTests(unittest.TestCase):
             second = self.control.remote_observation("pr")
         self.assertNotEqual(first["ruleset_digest"], second["ruleset_digest"])
         self.assertTrue(any("--paginate" in args and "--slurp" in args for args in calls))
+
+    def test_all_effective_branch_rule_pages_participate_in_the_pr_fingerprint(self):
+        self.control.policy["excluded_pr_authors"] = []
+        repo = {"data": {"repository": {"defaultBranchRef": {"name": "main"},
+            "pullRequests": {"pageInfo": {"hasNextPage": False}, "nodes": []}}}}
+        second_page = {"type": "required_status_checks", "parameters": {"strict": True}}
+        def response(args):
+            if args[1] == "graphql":
+                return repo
+            if "/rules/branches/" in args[-1]:
+                return [[{"type": "deletion"}], [second_page.copy()]]
+            return [[]]
+        with patch.object(module, "gh", side_effect=response):
+            first = self.control.remote_observation("pr")
+            second_page["parameters"] = {"strict": False}
+            second = self.control.remote_observation("pr")
+        self.assertNotEqual(first["protection_digest"], second["protection_digest"])
 
 
 if __name__ == "__main__":

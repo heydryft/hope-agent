@@ -75,7 +75,14 @@ def safe_relative(root, relative):
 
 def secret_check(data):
     text = data.decode("utf-8")
-    if any(pattern.search(text) for pattern in SECRETS):
+    candidates = [text]
+    try:
+        # Preserve duplicate object values while decoding escapes for the security scan.
+        decoded = json.loads(text, object_pairs_hook=list)
+        candidates.append(json.dumps(decoded, ensure_ascii=False))
+    except json.JSONDecodeError:
+        pass
+    if any(pattern.search(candidate) for pattern in SECRETS for candidate in candidates):
         raise ValueError("credential-like content; raw value withheld")
 
 
@@ -90,6 +97,13 @@ def command(args, cwd=None, timeout=90):
 
 def gh(args):
     return json.loads(command(["gh", *args]))
+
+
+def gh_paginated_array(endpoint):
+    pages = gh(["api", "--paginate", "--slurp", endpoint])
+    if not isinstance(pages, list) or any(not isinstance(page, list) for page in pages):
+        raise RuntimeError("API array pagination returned an incomplete shape")
+    return [record for page in pages for record in page]
 
 
 def archive_state(directory):
@@ -145,7 +159,10 @@ def archive_state(directory):
     generated_at = payload["generated_at"]
     if not isinstance(generated_at, str):
         raise ValueError("generated_at must be an ISO timestamp")
-    generated = dt.datetime.fromisoformat(generated_at.replace("Z", "+00:00"))
+    try:
+        generated = dt.datetime.fromisoformat(generated_at.replace("Z", "+00:00"))
+    except ValueError:
+        raise ValueError("generated_at is not a valid ISO timestamp; raw value withheld") from None
     if str(generated.year) != data.parent.name:
         raise ValueError("immutable directory year differs from generated_at")
     if not isinstance(payload["sources"], list) or not isinstance(payload["action_items"], list):
@@ -352,11 +369,8 @@ class Control:
                 if not info["hasNextPage"]:
                     break
                 after = info["endCursor"]
-            protections = gh(["api", "repos/" + REPOSITORY + "/rules/branches/main"])
-            pages = gh(["api", "--paginate", "--slurp", "repos/" + REPOSITORY + "/rulesets?includes_parents=true"])
-            if not isinstance(pages, list) or any(not isinstance(page, list) for page in pages):
-                raise RuntimeError("ruleset pagination returned an incomplete shape")
-            rules = [rule for page in pages for rule in page]
+            protections = gh_paginated_array("repos/" + REPOSITORY + "/rules/branches/main")
+            rules = gh_paginated_array("repos/" + REPOSITORY + "/rulesets?includes_parents=true")
             workflows = {}
             for sha in sorted({pr["headRefOid"] for pr in prs}):
                 # A workflow can change approval status without creating any check runs.
