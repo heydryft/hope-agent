@@ -171,6 +171,48 @@ class ControlTests(unittest.TestCase):
                     module.secret_check(fixture.encode())
                 self.assertNotIn(value, str(error.exception))
 
+    def test_opaque_sensitive_json_values_are_rejected_with_escaped_and_duplicate_keys(self):
+        for key in ["api_key", "apiKey", "api-key", "access_token", "refreshToken", "password", "secret", "token", "x-api-key"]:
+            value = "opaque-private-value"
+            fixtures = [json.dumps({"nested": {key: value}}),
+                        '{"' + key + '":"' + value + '","' + key + '":""}']
+            fixtures.append(fixtures[0].replace(key[0], "\\u" + format(ord(key[0]), "04x"), 1))
+            for fixture in fixtures:
+                with self.subTest(key=key), self.assertRaises(ValueError) as error:
+                    module.secret_check(fixture.encode())
+                self.assertNotIn(value, str(error.exception))
+
+    def test_empty_sensitive_fields_and_schema_arrays_are_not_credentials(self):
+        for value in [None, "", False, []]:
+            module.secret_check(json.dumps({"api_key": value}).encode())
+        module.secret_check(json.dumps([["token", "schema example"]]).encode())
+
+    def test_sealed_legacy_permission_notes_do_not_relax_other_credential_fields(self):
+        note = json.dumps({"authorization": "Owner must approve this experiment"}).encode()
+        with self.assertRaises(ValueError):
+            module.secret_check(note)
+        module.secret_check(note, permission_notes_allowed=True)
+        for value in [{"authorization": "Bearer abcdefgh"},
+                      {"authorization": "Permission pending", "api_key": "opaque-secret"}]:
+            with self.assertRaises(ValueError):
+                module.secret_check(json.dumps(value).encode(), permission_notes_allowed=True)
+
+    def test_legacy_permission_note_allowance_expires_when_archive_bytes_change(self):
+        archive = self.archive()
+        path = archive / "data/2026/report.json"
+        payload = json.loads(path.read_text())
+        payload["authorization"] = "Owner must approve the synthetic experiment"
+        data = json.dumps(payload).encode()
+        for target in [path, archive / "LATEST.json"]:
+            target.write_bytes(data)
+        sealed = {module.digest(data)}
+        self.assertEqual(module.archive_state(archive, sealed)["status"], "valid")
+        payload["changes"] = ["unreviewed edit"]
+        for target in [path, archive / "LATEST.json"]:
+            target.write_text(json.dumps(payload))
+        with self.assertRaisesRegex(ValueError, "credential field"):
+            module.archive_state(archive, sealed)
+
     def test_invalid_timestamp_never_leaks_a_credential_through_parser_errors(self):
         archive = self.archive()
         path = archive / "data/2026/report.json"

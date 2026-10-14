@@ -34,6 +34,12 @@ SECRETS = [re.compile(r"(?:sk|pat)-[A-Za-z0-9_-]{20,}|github_pat_[A-Za-z0-9_]{20
            re.compile(r"\bbearer\s+[A-Za-z0-9._~+/=-]{20,}", re.IGNORECASE),
            re.compile(r"AKIA[0-9A-Z]{16}"),
            re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----")]
+SENSITIVE_KEYS = {"apikey", "accesstoken", "refreshtoken", "authorization",
+                  "xapikey", "bearer", "password", "secret", "token"}
+
+
+class JsonObjectPairs(list):
+    """Tag object members without dropping duplicate keys or confusing them with arrays."""
 
 
 def now():
@@ -75,12 +81,24 @@ def safe_relative(root, relative):
     return path
 
 
-def secret_check(data):
+def secret_check(data, permission_notes_allowed=False):
     text = data.decode("utf-8")
     candidates = [text]
     try:
         # Preserve duplicate object values while decoding escapes for the security scan.
-        decoded = json.loads(text, object_pairs_hook=list)
+        decoded = json.loads(text, object_pairs_hook=JsonObjectPairs)
+        def check_keys(value):
+            if isinstance(value, JsonObjectPairs):
+                for key, item in value:
+                    normalized = key.casefold().replace("_", "").replace("-", "")
+                    permission_note = normalized == "authorization" and permission_notes_allowed
+                    if normalized in SENSITIVE_KEYS and not permission_note and item is not None and item is not False and item != "" and item != []:
+                        raise ValueError("credential field content; raw value withheld")
+                    check_keys(item)
+            elif isinstance(value, list):
+                for item in value:
+                    check_keys(item)
+        check_keys(decoded)
         candidates.append(json.dumps(decoded, ensure_ascii=False))
     except json.JSONDecodeError:
         pass
@@ -108,7 +126,7 @@ def gh_paginated_array(endpoint):
     return [record for page in pages for record in page]
 
 
-def archive_state(directory):
+def archive_state(directory, permission_note_documents=()):
     """Accept legacy indexes for reading, but require immutable targets and matching dates."""
     root = Path(directory).resolve()
     result = {"directory": str(root), "status": "missing"}
@@ -118,7 +136,7 @@ def archive_state(directory):
         return result
     latest_bytes = latest_path.read_bytes()
     report_bytes = report_path.read_bytes()
-    secret_check(latest_bytes)
+    secret_check(latest_bytes, digest(latest_bytes) in permission_note_documents)
     secret_check(report_bytes)
     latest = json.loads(latest_bytes)
     index = not REQUIRED.issubset(latest)
@@ -150,7 +168,7 @@ def archive_state(directory):
     payload_bytes, markdown = data.read_bytes(), report.read_bytes()
     if data.stem != report.stem or data.parent.name != report.parent.name:
         raise ValueError("LATEST contains a mixed immutable report/data pair")
-    secret_check(payload_bytes)
+    secret_check(payload_bytes, digest(payload_bytes) in permission_note_documents)
     secret_check(markdown)
     payload = json.loads(payload_bytes)
     missing = REQUIRED - set(payload)
@@ -235,7 +253,7 @@ class Control:
             task = self.registry.get(key, {})
             if task.get("archive_dir"):
                 try:
-                    state = archive_state(self.archive_directory(key))
+                    state = archive_state(self.archive_directory(key), self.policy.get("permission_note_document_sha256", []))
                 except (OSError, ValueError, KeyError) as error:
                     state = {"status": "invalid", "error": str(error)}
                 archives.append({"task_id": key, **state})
@@ -268,7 +286,7 @@ class Control:
                 item = self.registry.get(key, {})
                 if not item.get("archive_dir"):
                     continue
-                state = archive_state(self.archive_directory(key))
+                state = archive_state(self.archive_directory(key), self.policy.get("permission_note_document_sha256", []))
                 if state["status"] != "legacy-index":
                     continue
                 directory = Path(state["directory"])
@@ -288,7 +306,7 @@ class Control:
                         staged.append((Path(temp), directory / name))
                     for temp, target in staged:
                         os.replace(temp, target)
-                    verified = archive_state(directory)
+                    verified = archive_state(directory, self.policy.get("permission_note_document_sha256", []))
                     if verified["status"] != "valid":
                         raise ValueError("promotion did not produce a complete pair")
                 except Exception:
@@ -491,7 +509,7 @@ class Control:
         try:
             for relative, source in sorted(files.items()):
                 data = source.read_bytes()
-                secret_check(data)
+                secret_check(data, digest(data) in self.policy.get("permission_note_document_sha256", []))
                 target = safe_relative(destination, relative)
                 target.parent.mkdir(parents=True, exist_ok=True)
                 with target.open("xb") as stream:

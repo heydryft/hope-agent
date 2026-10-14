@@ -58,6 +58,11 @@ action_items、evidence_gaps、no_material_change。读取端兼容已有索引�
 发现篡改、秘密、越界或读写失败时只保存失败记录，不更新最近成功恢复证据。
 本地恢复验收不证明异地副本可用，不包含用户数据库、密钥、Git 元数据或生成缓存。
 
+解码后的敏感 JSON 字段拒绝非空值，重复字段不丢弃。少量旧研究文档以 `authorization`
+表示实验许可说明，使用用户批准实施时核验的完整文档 SHA-256 清单兼容，仅该字段
+可保留；字节变化不再匹配清单，其他敏感字段及所有凭据格式/授权头检查继续执行。
+新文档权限说明使用 `authorization_scope_note`，不复用凭据字段名称。
+
 ## 验证与排障
 
 运行 `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/automation -p 'test_*.py'`
