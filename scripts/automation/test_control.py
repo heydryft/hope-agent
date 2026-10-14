@@ -161,6 +161,16 @@ class ControlTests(unittest.TestCase):
         for value in ["QR login obtains iLink Bearer bot_token", "Bearer Cloudflare Token"]:
             module.secret_check(value.encode())
 
+    def test_short_authorization_header_values_are_rejected_in_all_schemes(self):
+        for scheme in ["Bearer", "Token", "Basic"]:
+            value = scheme + " abcdefgh"
+            fixtures = ["Authorization: " + value, json.dumps({"Authorization": value})]
+            fixtures.append(fixtures[-1].replace("abcdefgh", "\\u0061bcdefgh"))
+            for fixture in fixtures:
+                with self.subTest(scheme=scheme), self.assertRaises(ValueError) as error:
+                    module.secret_check(fixture.encode())
+                self.assertNotIn(value, str(error.exception))
+
     def test_invalid_timestamp_never_leaks_a_credential_through_parser_errors(self):
         archive = self.archive()
         path = archive / "data/2026/report.json"
