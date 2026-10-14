@@ -143,9 +143,17 @@ class Control:
                 fcntl.flock(stream, fcntl.LOCK_UN)
 
     def task(self, task):
-        if task not in self.policy["task_ids"]:
+        if not re.fullmatch(r"[a-z0-9-]+", task) or task not in self.policy["task_ids"]:
             raise ValueError("task is outside the approved project scope")
         return task
+
+    def archive_directory(self, task):
+        self.task(task)
+        configured = Path(self.registry[task]["archive_dir"]).resolve()
+        approved = self.policy.get("archive_directories", {}).get(task)
+        if not approved or configured != Path(approved).resolve():
+            raise ValueError("archive directory is outside the approved task scope")
+        return configured
 
     def automations(self):
         database = self.codex / "sqlite/codex-dev.db"
@@ -163,7 +171,7 @@ class Control:
             task = self.registry.get(key, {})
             if task.get("archive_dir"):
                 try:
-                    state = archive_state(task["archive_dir"])
+                    state = archive_state(self.archive_directory(key))
                 except (OSError, ValueError, KeyError) as error:
                     state = {"status": "invalid", "error": str(error)}
                 archives.append({"task_id": key, **state})
@@ -196,7 +204,7 @@ class Control:
                 item = self.registry.get(key, {})
                 if not item.get("archive_dir"):
                     continue
-                state = archive_state(item["archive_dir"])
+                state = archive_state(self.archive_directory(key))
                 if state["status"] != "legacy-index":
                     continue
                 directory = Path(state["directory"])
@@ -286,7 +294,7 @@ class Control:
                 repo = page["data"]["repository"]
                 base = repo["defaultBranchRef"]
                 for pr in repo["pullRequests"]["nodes"]:
-                    if pr["author"]["login"] in self.policy["excluded_pr_authors"]:
+                    if (pr.get("author") or {}).get("login") in self.policy["excluded_pr_authors"]:
                         continue
                     if pr["reviewThreads"]["pageInfo"]["hasNextPage"]:
                         raise RuntimeError("review thread observation needs pagination; do not skip")
@@ -301,16 +309,39 @@ class Control:
                 after = info["endCursor"]
             protections = gh(["api", "repos/" + REPOSITORY + "/rules/branches/main"])
             rules = gh(["api", "--paginate", "repos/" + REPOSITORY + "/rulesets?includes_parents=true"])
+            workflows = {}
+            for sha in sorted({pr["headRefOid"] for pr in prs}):
+                # A workflow can change approval status without creating any check runs.
+                page = gh(["api", "repos/" + REPOSITORY + "/actions/runs?head_sha=" + sha + "&per_page=100"])
+                if page.get("total_count", 0) > 100:
+                    raise RuntimeError("workflow observation needs pagination; do not skip")
+                latest = {}
+                for run in page["workflow_runs"]:
+                    if run["head_sha"] != sha:
+                        raise RuntimeError("workflow response is not bound to the expected head")
+                    key = str(run["workflow_id"])
+                    if key not in latest or run["created_at"] > latest[key]["created_at"]:
+                        latest[key] = {field: run.get(field) for field in ["id", "workflow_id", "head_sha",
+                            "status", "conclusion", "run_attempt", "created_at"]}
+                workflows[sha] = latest
             return {"main": base, "pull_requests": sorted(prs, key=lambda x: x["number"]),
-                    "protection_digest": digest(protections), "ruleset_digest": digest(rules)}
+                    "workflow_runs": workflows, "protection_digest": digest(protections),
+                    "ruleset_digest": digest(rules)}
         if task == "issue":
             issues = gh(["issue", "list", "--repo", REPOSITORY, "--state", "open", "--limit", "1000",
                          "--json", "number,updatedAt,comments"])
-            return [{"number": issue["number"], "updatedAt": issue["updatedAt"],
+            # A related PR can merge or get new feedback without touching the Issue.
+            prs = gh(["pr", "list", "--repo", REPOSITORY, "--state", "all", "--limit", "1000",
+                      "--json", "number,headRefOid,baseRefOid,state,updatedAt"])
+            if len(issues) >= 1000 or len(prs) >= 1000:
+                raise RuntimeError("Issue/PR observation needs pagination; do not skip")
+            summaries = [{"number": issue["number"], "updatedAt": issue["updatedAt"],
                      "comments": [{"id": comment.get("id"), "updatedAt": comment.get("updatedAt"),
                                    "createdAt": comment.get("createdAt"),
                                    "body_sha256": digest(comment.get("body", ""))}
                                   for comment in issue["comments"]]} for issue in issues]
+            return {"issues": sorted(summaries, key=lambda x: x["number"]),
+                    "pull_requests": sorted(prs, key=lambda x: x["number"])}
         if task == "main":
             return {"main": gh(["api", "repos/" + REPOSITORY + "/commits/main"])["sha"],
                     "releases": gh(["release", "list", "--repo", REPOSITORY, "--limit", "30",
@@ -373,7 +404,7 @@ class Control:
                 files["automations/" + task + "/automation.toml"] = path
             item = self.registry.get(task, {})
             if item.get("archive_dir"):
-                archive = Path(item["archive_dir"]).resolve()
+                archive = self.archive_directory(task)
                 for folder, suffix in [("reports", ".md"), ("data", ".json"), ("timestamps", ".json")]:
                     for source in (archive / folder).rglob("*" + suffix):
                         relative = source.relative_to(archive)

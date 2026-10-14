@@ -44,6 +44,7 @@ class ControlTests(unittest.TestCase):
         archive = self.archive(indexed=True)
         originals = {str(p): p.read_bytes() for folder in ["data", "reports"] for p in (archive / folder / "2026").iterdir()}
         self.control.registry = {"radar": {"archive_dir": str(archive)}}
+        self.control.policy["archive_directories"] = {"radar": str(archive)}
         self.assertEqual(module.archive_state(archive)["status"], "legacy-index")
         result = self.control.normalize_archives()
         self.assertEqual(result["promoted"][0]["status"], "valid")
@@ -59,6 +60,7 @@ class ControlTests(unittest.TestCase):
         (archive / "data/2026/report.json").write_text(json.dumps(data))
         original = (archive / "LATEST.json").read_bytes()
         self.control.registry = {"radar": {"archive_dir": str(archive)}}
+        self.control.policy["archive_directories"] = {"radar": str(archive)}
         with self.assertRaisesRegex(ValueError, "generation times differ"):
             self.control.normalize_archives()
         self.assertEqual((archive / "LATEST.json").read_bytes(), original)
@@ -152,15 +154,54 @@ class ControlTests(unittest.TestCase):
     def test_issue_observation_stores_comment_digest_without_body(self):
         raw = [{"number": 1, "updatedAt": "now", "comments": [{"id": "1", "body": "private text"}]}]
         self.control.policy["task_ids"].append("issue")
-        with patch.object(module, "gh", return_value=raw):
+        with patch.object(module, "gh", side_effect=[raw, []]):
             result = self.control.remote_observation("issue")
         self.assertNotIn("private text", json.dumps(result))
-        self.assertEqual(result[0]["comments"][0]["body_sha256"], module.digest("private text"))
+        self.assertEqual(result["issues"][0]["comments"][0]["body_sha256"], module.digest("private text"))
+
+    def test_issue_rechecks_when_a_pr_changes_without_an_issue_comment(self):
+        self.control.policy["task_ids"].append("issue")
+        issue = [{"number": 1, "updatedAt": "same", "comments": []}]
+        opened = [{"number": 2, "state": "OPEN", "headRefOid": "a" * 40}]
+        merged = [{"number": 2, "state": "MERGED", "headRefOid": "a" * 40}]
+        with patch.object(module, "gh", side_effect=[issue, opened, issue, merged]):
+            first = module.digest(self.control.remote_observation("issue"))
+            second = module.digest(self.control.remote_observation("issue"))
+        self.assertNotEqual(first, second)
 
     def test_unknown_task_has_no_side_effects(self):
         with self.assertRaises(ValueError):
             self.control.preflight("unapproved")
         self.assertFalse(self.control.state.exists())
+
+    def test_registry_cannot_redirect_backups_to_an_unapproved_directory(self):
+        approved = self.archive()
+        self.control.policy["archive_directories"] = {"radar": str(approved)}
+        self.control.registry = {"radar": {"archive_dir": str(self.root / "private")}}
+        with self.assertRaisesRegex(ValueError, "approved task scope"):
+            self.control.archive_directory("radar")
+
+    def test_workflow_approval_changes_are_detected_without_any_check_runs(self):
+        sha = "a" * 40
+        self.control.policy["excluded_pr_authors"] = []
+        repository = {"data": {"repository": {"defaultBranchRef": {"name": "main"},
+            "pullRequests": {"pageInfo": {"hasNextPage": False}, "nodes": [{"number": 1,
+                "headRefOid": sha, "author": {"login": "contributor"},
+                "reviewThreads": {"pageInfo": {"hasNextPage": False}},
+                "commits": {"nodes": [{"commit": {"statusCheckRollup": None}}]}}]}}}}
+        status = {"conclusion": "action_required"}
+        def response(args):
+            if args[1] == "graphql":
+                return repository
+            if "/actions/runs?" in args[1]:
+                return {"total_count": 1, "workflow_runs": [{"id": 1, "workflow_id": 2,
+                    "head_sha": sha, "status": "completed", "created_at": "2026-10-01", **status}]}
+            return []
+        with patch.object(module, "gh", side_effect=response):
+            first = module.digest(self.control.remote_observation("pr"))
+            status["conclusion"] = "failure"
+            second = module.digest(self.control.remote_observation("pr"))
+        self.assertNotEqual(first, second)
 
 
 if __name__ == "__main__":
