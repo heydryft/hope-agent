@@ -28,8 +28,9 @@ except ImportError:
 REPOSITORY = "shiwenwen/hope-agent"
 REQUIRED = {"task_name", "generated_at", "baseline", "scope", "sources", "changes",
             "decisions", "action_items", "evidence_gaps", "no_material_change"}
-SECRETS = [re.compile(r"gh[pousr]_[A-Za-z0-9]{30,}"),
-           re.compile(r"sk-(?:proj-|or-v1-)?[A-Za-z0-9_-]{30,}"),
+SECRETS = [re.compile(r"(?:sk|pat)-[A-Za-z0-9_-]{20,}|github_pat_[A-Za-z0-9_]{20,}|"
+                      r"gh[pousr]_[A-Za-z0-9_]{20,}|AIza[A-Za-z0-9_-]{35}|xox[abp]-[A-Za-z0-9_-]{20,}"),
+           re.compile(r"\bbearer\s+[A-Za-z0-9._~+/=-]{8,}", re.IGNORECASE),
            re.compile(r"AKIA[0-9A-Z]{16}"),
            re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----")]
 

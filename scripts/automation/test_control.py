@@ -144,6 +144,19 @@ class ControlTests(unittest.TestCase):
                 module.secret_check(text.encode())
             self.assertNotIn(value, str(error.exception))
 
+    def test_recovery_scanner_covers_project_sanitizer_token_formats_and_json_escapes(self):
+        values = [prefix + "A" * length for prefix, length in [
+            ("github_pat_", 36), ("ghp_", 36), ("sk-proj-", 36), ("pat-", 36),
+            ("AIza", 35), ("xoxb-", 36), ("Bearer ", 36)]]
+        for value in values:
+            for escaped in [False, True]:
+                text = json.dumps({"fixture": value})
+                if escaped:
+                    text = text.replace("A", "\\u0041")
+                with self.subTest(prefix=value.split("_")[0], escaped=escaped), self.assertRaises(ValueError) as error:
+                    module.secret_check(text.encode())
+                self.assertNotIn(value, str(error.exception))
+
     def test_invalid_timestamp_never_leaks_a_credential_through_parser_errors(self):
         archive = self.archive()
         path = archive / "data/2026/report.json"
