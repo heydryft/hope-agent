@@ -141,6 +141,19 @@ class ControlTests(unittest.TestCase):
             module.secret_check(value.encode())
         self.assertNotIn(value, str(error.exception))
 
+    def test_invalid_timestamp_never_leaks_a_credential_through_parser_errors(self):
+        archive = self.archive()
+        path = archive / "data/2026/report.json"
+        payload = json.loads(path.read_text())
+        value = "ghp_" + "a" * 36
+        payload["generated_at"] = value
+        encoded = json.dumps(payload).encode()
+        path.write_bytes(encoded)
+        (archive / "LATEST.json").write_bytes(encoded)
+        with self.assertRaises(ValueError) as error:
+            module.archive_state(archive)
+        self.assertNotIn(value, str(error.exception))
+
     def test_recovery_preserves_allowlisted_progress_without_copying_arbitrary_state(self):
         for name in ["prepare.py", "control.py", "README.md"]:
             (self.runtime / name).write_text("fixture\n")

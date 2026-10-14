@@ -100,9 +100,11 @@ def archive_state(directory):
     report_path = safe_relative(root, "LATEST.md")
     if not latest_path.is_file() or not report_path.is_file():
         return result
-    latest = json.loads(latest_path.read_text())
     latest_bytes = latest_path.read_bytes()
     report_bytes = report_path.read_bytes()
+    secret_check(latest_bytes)
+    secret_check(report_bytes)
+    latest = json.loads(latest_bytes)
     index = not REQUIRED.issubset(latest)
     if index:
         data = safe_relative(root, latest["data"])
@@ -132,6 +134,8 @@ def archive_state(directory):
     payload_bytes, markdown = data.read_bytes(), report.read_bytes()
     if data.stem != report.stem or data.parent.name != report.parent.name:
         raise ValueError("LATEST contains a mixed immutable report/data pair")
+    secret_check(payload_bytes)
+    secret_check(markdown)
     payload = json.loads(payload_bytes)
     missing = REQUIRED - set(payload)
     if missing:
@@ -146,8 +150,6 @@ def archive_state(directory):
         raise ValueError("immutable directory year differs from generated_at")
     if not isinstance(payload["sources"], list) or not isinstance(payload["action_items"], list):
         raise ValueError("invalid sources or action_items schema")
-    secret_check(payload_bytes)
-    secret_check(markdown)
     result.update(status="legacy-index" if index else "valid", generated_at=payload["generated_at"],
                   data=str(data), report=str(report), data_sha256=digest(payload_bytes),
                   report_sha256=digest(markdown), action_items=len(payload["action_items"]))
@@ -228,7 +230,7 @@ class Control:
         with sqlite3.connect("file:" + str(database) + "?mode=ro", uri=True) as conn:
             conn.row_factory = sqlite3.Row
             runs = [dict(row) for row in conn.execute(
-                "SELECT automation_id,thread_id,status,created_at FROM automation_runs "
+                "SELECT automation_id,thread_id,status,created_at,updated_at FROM automation_runs "
                 "ORDER BY created_at DESC") if row["automation_id"] in self.policy["task_ids"]]
         latest = {}
         for run in runs:
