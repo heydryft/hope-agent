@@ -15,7 +15,7 @@ prepare `exit=0/ok=true`；基线 **07a835857040e5534d2e0a0249a7c266f37d88f6**�
 | P1 / hope-agent-3 | `02-A3` GPT Image 1的10-23期限，以及原厂OpenAI旧别名清理仍在依赖队列 | 依赖任务先收口#828，再做一个维护包；本任务保留备援，不创建重复PR；10-20目标前或主责证据变化时重评 |
 | P1 / automation-7 | `08-NIM-001` Figma权限/限流、`04-A7` OpenViking分页、`10-A14` Signal重放按影响排队 | 先冻结有界合成夹具与验收；不补跑完整专项，不把旧常规授权当阻塞；真实数据/账号和宿主升级仍关闭 |
 
-MiniMax依据01专项和依赖快检10-15已保存的官方公开证据实施：10-19新用户限制、11-18既有按量退役与套餐路由分别说明。新建候选移除 `MiniMax-M2.5`、`MiniMax-M2.7`、`MiniMax-M2.7-highspeed`；模型补全随模板更新。用户已保存的型号、端点、价格、active/fallback与网关不改；M Plan / Token Plan 的厂商路由不等于通用API可使用Preview。本地定向验证和最终PR/合并结果以本轮交付回执为准，中英手册及Provider合同同步。
+MiniMax依据01专项和依赖快检10-15已保存的官方公开证据实施：10-19新用户限制、11-18既有按量退役与套餐路由分别说明。新建候选移除 `MiniMax-M2.5`、`MiniMax-M2.7`、`MiniMax-M2.7-highspeed`；模型补全随模板更新。用户已保存的型号、端点、价格、active/fallback与网关不改；M Plan / Token Plan 的厂商路由不等于通用API可使用Preview。正式交付 [PR #831](https://github.com/shiwenwen/hope-agent/pull/831)；4组定向测试30项通过，首次普通pre-push为Rust5410项通过/7项既有ignored、前端300文件/1732项通过。最终精确头审查/CI和合并结果以本轮交付回执为准，中英手册及Provider合同同步。
 
 | 台账 ID / 主责 | 状态 | 新来源与去重关系、下一验收 |
 | --- | --- | --- |
