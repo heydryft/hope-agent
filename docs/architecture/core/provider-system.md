@@ -152,7 +152,7 @@ flowchart TD
 
 #### 2026-10-17 OpenAI 限期候选维护
 
-依据 [官方退役公告](https://developers.openai.com/api/docs/deprecations)，`o1`、`o1-pro`、`o3-mini`、`o4-mini` 于 2026-10-23 停用；两个 OpenAI 直连新建模板移除这些候选，保留已收录的 `gpt-5.6-sol` / `gpt-5.6-terra`。这是目录维护，不将旧型号强制映射到替代型号，也不为 `o1-pro` 自动增加 `reasoning.mode: pro`。已存配置、active/fallback、网关目录和具有独立生命周期的 deep-research 型号均保持用户选择；真实账号与模型调用未验证。回退可恢复目录代码，到期后不再推荐退役型号。
+依据 [官方退役公告](https://developers.openai.com/api/docs/deprecations)，`o1`、`o1-pro`、`o3-mini`、`o4-mini` 于 2026-10-23 停用；两个 OpenAI 直连新建模板移除这些候选，保留已收录的 `gpt-5.6-sol` / `gpt-5.6-terra`。这是目录维护，不将旧型号强制映射到替代型号，也不为 `o1-pro` 自动增加 `reasoning.mode: pro`。另按 [官方深度研究说明](https://developers.openai.com/api/docs/guides/deep-research) 移除已于 2026-07-23 停用的 `o3-deep-research` / `o4-mini-deep-research` 新建候选；旧示例保留这些 ID 不代表仍可用，不新增托管研究工具或后台协议。已存配置、active/fallback 与网关目录均保持用户选择；真实账号与模型调用未验证。回退可恢复目录代码，到期后不再推荐退役型号。
 
 #### 2026-10-15 MiniMax 新用户候选维护
 
