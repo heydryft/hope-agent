@@ -12,6 +12,19 @@ const RETIRED_DIRECT_MODEL_IDS = [
 ]
 
 describe("provider template lifecycle hygiene", () => {
+  it("excludes October 23 retirements only from direct OpenAI new-provider presets", () => {
+    for (const key of ["openai", "openai-chat"]) {
+      const provider = PROVIDER_TEMPLATES.find((template) => template.key === key)!
+      for (const id of ["o1", "o1-pro", "o3-mini", "o4-mini"]) {
+        expect(provider.models.some((model) => model.id === id), `${key}: ${id}`).toBe(false)
+      }
+      // Supported replacements already exist; deep-research IDs have separate lifecycles.
+      for (const id of ["gpt-5.6-sol", "gpt-5.6-terra", "o4-mini-deep-research"]) {
+        expect(provider.models.some((model) => model.id === id), `${key}: ${id}`).toBe(true)
+      }
+    }
+  })
+
   it("offers current stable gateway models with verified channel metadata", () => {
     const together = PROVIDER_TEMPLATES.find((p) => p.key === "together")!
     for (const [id, context, input, output] of [
