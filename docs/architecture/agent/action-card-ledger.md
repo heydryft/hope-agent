@@ -13,7 +13,7 @@
 | P1 / hope-agent-3 | 新ZIP公告、rustls与机器人PR | 沿依赖队列的10-18安全包；兼容性和可达性证据先于升级 |
 | P1 / automation-7，`04-A7` / `10-A14` | OpenViking5000+1分页、Signal逐账号/daemon代次重放 | 合成夹具继续排队，真实服务/账号门保留 |
 
-`05-A1` 保持部分交付：本轮仅成功结果数据传递，不新增schema校验器、outputSchema组合/$ref预算、MRTR或权限能力；协议`_meta`不进模型正文。`isError=true`沿原正文错误路径，不把新增结构化负载写进Learning错误事件。旧文本与媒体占位保留，入站4MiB及执行层结果预算/无痕生命周期沿既有路径；没有真实GitHub MCP Server、OAuth、外部Agent或Provider调用。#836的静态目录交付与66项旧基线有界回归分别记账，后者不是当前源码复验。正式PR与验证终态以交付回执为准。
+`05-A1` 保持部分交付：本轮仅成功结果数据传递，不新增schema校验器、outputSchema组合/$ref预算、MRTR或权限能力；协议`_meta`不进模型正文。`isError=true`沿原正文错误路径，不把新增结构化负载写进Learning错误事件。旧文本与媒体占位保留，入站4MiB及执行层结果预算/无痕生命周期沿既有路径；没有真实GitHub MCP Server、OAuth、外部Agent或Provider调用。#836的静态目录交付与66项旧基线有界回归分别记账，后者不是当前源码复验。7项离线Rust测试（含36组JSON/文字/版本组合）、中英手册15+15对齐及普通pre-push通过：Rust5417项/7项既有ignored、前端301文件/1735项。正式交付 [PR #837](https://github.com/shiwenwen/hope-agent/pull/837)，最终精确头审查、CI与合并终态以交付回执为准。
 
 ## 2026-10-17：依赖主责接续 OpenAI 临期目录
 
