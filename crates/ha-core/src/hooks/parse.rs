@@ -11,6 +11,66 @@ use super::decision::HookContribution;
 use super::runner::RawHookResult;
 use super::types::{HookDecision, HookEvent, HookOutput};
 
+/// Choose a machine-readable MCP hook payload without discarding a legacy
+/// verdict for supplemental metadata. If both channels contain protocol data,
+/// preserve the stricter event-specific decision (continue:false wins).
+pub fn mcp_hook_stdout(structured: &serde_json::Value, legacy: &str, event: HookEvent) -> String {
+    let Some(map) = structured.as_object() else {
+        return legacy.to_string();
+    };
+    let known = map.iter().any(|(key, value)| {
+        !value.is_null()
+            && match key.as_str() {
+                "continue" | "stopReason" | "suppressOutput" | "systemMessage"
+                | "terminalSequence" | "decision" | "reason" => true,
+                "hookSpecificOutput" => value.as_object().is_some_and(|nested| {
+                    nested.iter().any(|(key, value)| {
+                        !value.is_null()
+                            && matches!(
+                                key.as_str(),
+                                "additionalContext"
+                                    | "sessionTitle"
+                                    | "permissionDecision"
+                                    | "permissionDecisionReason"
+                                    | "updatedInput"
+                                    | "updatedToolOutput"
+                                    | "decision"
+                                    | "retry"
+                                    | "action"
+                                    | "content"
+                                    | "displayContent"
+                                    | "initialUserMessage"
+                                    | "watchPaths"
+                                    | "reloadSkills"
+                                    | "worktreePath"
+                            )
+                    })
+                }),
+                _ => false,
+            }
+    });
+    let Ok(output) = serde_json::from_value::<HookOutput>(structured.clone()) else {
+        return legacy.to_string();
+    };
+    if !known {
+        return legacy.to_string();
+    }
+    let candidate = contribution_from_output(output, event);
+    let previous = parse_stdout(legacy, event);
+    let priority = |value: &HookContribution| {
+        if value.continue_execution {
+            super::decision::rank(&value.decision)
+        } else {
+            5
+        }
+    };
+    if priority(&previous) > priority(&candidate) {
+        legacy.to_string()
+    } else {
+        structured.to_string()
+    }
+}
+
 /// Parse one handler's raw result into its decision contribution.
 pub fn parse(raw: &RawHookResult, event: HookEvent) -> HookContribution {
     if raw.timed_out {
@@ -147,6 +207,33 @@ mod tests {
             duration: Duration::ZERO,
             timed_out: false,
         }
+    }
+
+    #[test]
+    fn mcp_dual_results_use_event_specific_decisions() {
+        let legacy = r#"{"decision":"block","reason":"legacy veto"}"#;
+        let structured = serde_json::json!({
+            "hookSpecificOutput": {"permissionDecision": "deny"}
+        });
+        // PreToolUse consumes permissionDecision; PermissionRequest does not.
+        assert_eq!(
+            mcp_hook_stdout(&structured, legacy, HookEvent::PreToolUse),
+            structured.to_string()
+        );
+        assert_eq!(
+            mcp_hook_stdout(&structured, legacy, HookEvent::PermissionRequest),
+            legacy
+        );
+        let stop = r#"{"continue":false,"stopReason":"stop"}"#;
+        assert_eq!(
+            mcp_hook_stdout(&structured, stop, HookEvent::PreToolUse),
+            stop
+        );
+        let structured_block = serde_json::json!({"decision":"block"});
+        assert_eq!(
+            mcp_hook_stdout(&structured_block, "{}", HookEvent::PreToolUse),
+            structured_block.to_string()
+        );
     }
 
     #[test]

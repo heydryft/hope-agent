@@ -80,7 +80,9 @@ async fn run_fixture() {
             cwd: Default::default(),
             permission_mode: PermissionMode::Default,
             effort: None,
-            hook_event_name: "PreToolUse".into(),
+            // The protocol consumer must follow the typed variant even when
+            // the common display field disagrees.
+            hook_event_name: "PermissionRequest".into(),
             agent_id: None,
             agent_type: None,
         },
@@ -110,11 +112,29 @@ async fn run_fixture() {
             HookDecision::Allow,
         ),
     ] {
-        for wire in [
+        let mut responses = vec![
             json!({"structuredContent": payload, "_meta": {"private": "excluded"}}),
             serde_json::to_value(rmcp::model::CallToolResult::structured(payload.clone())).unwrap(),
             json!({"content": [{"type": "text", "text": payload.to_string()}]}),
+        ];
+        for supplemental in [
+            json!({"risk": "high"}),
+            Value::Null,
+            json!(false),
+            json!(42),
+            json!([]),
+            json!({}),
+            json!({"hookSpecificOutput": {"risk": "high"}}),
+            json!({"continue": "invalid type"}),
+            json!({"hookSpecificOutput": {"additionalContext": "supplemental context"}}),
+            json!({"hookSpecificOutput": {"permissionDecision": "allow"}}),
         ] {
+            responses.push(json!({
+                "content": [{"type": "text", "text": payload.to_string()}],
+                "structuredContent": supplemental
+            }));
+        }
+        for wire in responses {
             let config = serde_json::from_value(json!({
                 "server": "hook_fixture", "tool": "scan", "input": {"result": wire}
             }))

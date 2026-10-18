@@ -47,7 +47,7 @@ type BoxFut<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 #[derive(Clone, Copy)]
 pub enum McpToolResultFormat {
     Conversation,
-    Hook,
+    Hook(crate::hooks::HookEvent),
 }
 
 pub struct McpHooks {

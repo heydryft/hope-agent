@@ -245,8 +245,10 @@ fn normalize_result_for(
         });
     }
     if let Some(structured) = &result.structured_content {
-        if matches!(format, McpToolResultFormat::Hook) {
-            return Ok(structured.to_string());
+        if let McpToolResultFormat::Hook(event) = format {
+            return Ok(ha_core::hooks::parse::mcp_hook_stdout(
+                structured, &body, event,
+            ));
         }
         if !body.is_empty() {
             body.push_str("\n\n");
@@ -408,9 +410,14 @@ mod tests {
                     assert_eq!(serde_json::from_str::<Value>(json).unwrap(), value);
                     assert!(!normalized.contains("not model content"));
                     assert_eq!(
-                        normalize_result_for(&result, "server", "tool", McpToolResultFormat::Hook)
-                            .unwrap(),
-                        value.to_string()
+                        normalize_result_for(
+                            &result,
+                            "server",
+                            "tool",
+                            McpToolResultFormat::Hook(ha_core::hooks::HookEvent::PreToolUse)
+                        )
+                        .unwrap(),
+                        text.unwrap_or_default()
                     );
                 }
             }
@@ -437,7 +444,10 @@ mod tests {
                 "structuredContent": {"private": "not diagnostic content"},
                 "isError": true
             }));
-            for format in [McpToolResultFormat::Conversation, McpToolResultFormat::Hook] {
+            for format in [
+                McpToolResultFormat::Conversation,
+                McpToolResultFormat::Hook(ha_core::hooks::HookEvent::PreToolUse),
+            ] {
                 match normalize_result_for(&result, "server", "tool", format).unwrap_err() {
                     McpError::ToolFailed {
                         server,

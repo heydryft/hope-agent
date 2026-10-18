@@ -101,7 +101,7 @@ impl HookHandler for McpToolHandler {
             .max(Duration::from_secs(1));
         match tokio::time::timeout(
             remaining,
-            crate::mcp::invoke::call_tool_for_hook(&name, &args, &ctx),
+            crate::mcp::invoke::call_tool_for_hook(&name, &args, &ctx, input.event()),
         )
         .await
         {

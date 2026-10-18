@@ -23,14 +23,21 @@ pub async fn call_tool(
     .await
 }
 
-/// Hook stdout is a machine protocol: structuredContent is the complete JSON
-/// value, with the legacy text fallback only when that field is absent.
+/// Hook stdout is a machine protocol; supplemental structured metadata must
+/// not discard a legacy verdict. Both channels use event-specific precedence.
 pub async fn call_tool_for_hook(
     name: &str,
     args: &Value,
     ctx: &crate::tool_defs::ToolExecContext,
+    event: crate::hooks::HookEvent,
 ) -> anyhow::Result<String> {
-    call_tool_with_format(name, args, ctx, crate::mcp_hooks::McpToolResultFormat::Hook).await
+    call_tool_with_format(
+        name,
+        args,
+        ctx,
+        crate::mcp_hooks::McpToolResultFormat::Hook(event),
+    )
+    .await
 }
 
 async fn call_tool_with_format(
