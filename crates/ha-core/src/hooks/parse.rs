@@ -20,37 +20,22 @@ pub fn mcp_hook_stdout(structured: &serde_json::Value, legacy: &str, event: Hook
     };
     // An empty protocol object means normal permission flow, not an explicit
     // approval. It must also veto a second channel's prompt-skipping allow.
+    // Recognize the declared root namespace, including optional null fields
+    // and empty/nested no-op outputs. Deserialization below checks types;
+    // unknown metadata objects must not impersonate a protocol response.
     let known = map.is_empty()
-        || map.iter().any(|(key, value)| {
-            !value.is_null()
-                && match key.as_str() {
-                    "continue" | "stopReason" | "suppressOutput" | "systemMessage"
-                    | "terminalSequence" | "decision" | "reason" => true,
-                    "hookSpecificOutput" => value.as_object().is_some_and(|nested| {
-                        nested.iter().any(|(key, value)| {
-                            !value.is_null()
-                                && matches!(
-                                    key.as_str(),
-                                    "additionalContext"
-                                        | "sessionTitle"
-                                        | "permissionDecision"
-                                        | "permissionDecisionReason"
-                                        | "updatedInput"
-                                        | "updatedToolOutput"
-                                        | "decision"
-                                        | "retry"
-                                        | "action"
-                                        | "content"
-                                        | "displayContent"
-                                        | "initialUserMessage"
-                                        | "watchPaths"
-                                        | "reloadSkills"
-                                        | "worktreePath"
-                                )
-                        })
-                    }),
-                    _ => false,
-                }
+        || map.keys().any(|key| {
+            matches!(
+                key.as_str(),
+                "continue"
+                    | "stopReason"
+                    | "suppressOutput"
+                    | "systemMessage"
+                    | "terminalSequence"
+                    | "decision"
+                    | "reason"
+                    | "hookSpecificOutput"
+            )
         });
     let Ok(output) = serde_json::from_value::<HookOutput>(structured.clone()) else {
         return legacy.to_string();
@@ -315,6 +300,11 @@ mod tests {
                 serde_json::json!({}),
                 serde_json::json!({"hookSpecificOutput":{"additionalContext":"context"}}),
                 serde_json::json!({"hookSpecificOutput":{"updatedInput":{"safe":true}}}),
+                serde_json::json!({"hookSpecificOutput": {}}),
+                serde_json::json!({"hookSpecificOutput": null}),
+                serde_json::json!({"hookSpecificOutput": {"permissionDecision": null, "additionalContext": null, "updatedInput": null}}),
+                serde_json::json!({"decision": null, "stopReason": null, "reason": null, "terminalSequence": null, "systemMessage": null}),
+                serde_json::json!({"hookSpecificOutput": {"risk": "unknown"}}),
             ] {
                 for (legacy, structured) in [(&normal, &allow), (&allow, &normal)] {
                     let stdout = mcp_hook_stdout(structured, &legacy.to_string(), event);
@@ -323,7 +313,10 @@ mod tests {
                     assert!(!result.permission_allow);
                     assert_eq!(
                         result.updated_input,
-                        normal["hookSpecificOutput"].get("updatedInput").cloned()
+                        normal["hookSpecificOutput"]
+                            .get("updatedInput")
+                            .filter(|value| !value.is_null())
+                            .cloned()
                     );
                     assert_eq!(
                         result.additional_context.as_deref(),

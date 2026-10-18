@@ -185,6 +185,11 @@ async fn run_fixture() {
         json!({}),
         json!({"hookSpecificOutput": {"additionalContext": "retain normal approval"}}),
         json!({"hookSpecificOutput": {"updatedInput": {"command": "safe rewrite"}}}),
+        json!({"hookSpecificOutput": {}}),
+        json!({"hookSpecificOutput": null}),
+        json!({"hookSpecificOutput": {"permissionDecision": null, "additionalContext": null, "updatedInput": null}}),
+        json!({"decision": null, "stopReason": null, "reason": null, "terminalSequence": null, "systemMessage": null}),
+        json!({"hookSpecificOutput": {"risk": "unknown"}}),
     ] {
         for (legacy, structured) in [(&normal, &allow), (&allow, &normal)] {
             let config = serde_json::from_value(json!({
@@ -210,7 +215,10 @@ async fn run_fixture() {
             assert_eq!(parsed.decision, HookDecision::Allow);
             assert_eq!(
                 parsed.updated_input,
-                normal["hookSpecificOutput"].get("updatedInput").cloned()
+                normal["hookSpecificOutput"]
+                    .get("updatedInput")
+                    .filter(|value| !value.is_null())
+                    .cloned()
             );
             assert_eq!(
                 parsed.additional_context.as_deref(),
