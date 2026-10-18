@@ -147,7 +147,10 @@ async fn run_fixture() {
                 )
                 .await;
             assert_eq!(raw.exit_code, Some(0), "{}", raw.stderr);
-            assert_eq!(serde_json::from_str::<Value>(&raw.stdout).unwrap(), payload);
+            assert!(serde_json::from_str::<Value>(&raw.stdout)
+                .unwrap()
+                .is_object());
+            assert!(!raw.stdout.contains("excluded"));
             let parsed = ha_core::hooks::parse::parse(&raw, HookEvent::PreToolUse);
             assert_eq!(parsed.decision, expected);
             assert!(!parsed.permission_allow);
@@ -155,6 +158,64 @@ async fn run_fixture() {
                 assert!(!parsed.continue_execution);
                 assert_eq!(parsed.stop_reason.as_deref(), Some("halt"));
             }
+        }
+    }
+    let allow = json!({"hookSpecificOutput": {"permissionDecision": "allow"}});
+    for wire in [
+        json!({"structuredContent": allow}),
+        serde_json::to_value(rmcp::model::CallToolResult::structured(allow.clone())).unwrap(),
+        json!({"content": [{"type": "text", "text": allow.to_string()}]}),
+    ] {
+        let config = serde_json::from_value(json!({
+            "server": "hook_fixture", "tool": "scan", "input": {"result": wire}
+        }))
+        .unwrap();
+        let raw = McpToolHandler::new(config)
+            .run(
+                &input,
+                &ha_core::hooks::env::HookEnv::empty(),
+                Instant::now() + Duration::from_secs(5),
+            )
+            .await;
+        assert_eq!(raw.exit_code, Some(0));
+        let parsed = ha_core::hooks::parse::parse(&raw, HookEvent::PreToolUse);
+        assert!(parsed.permission_allow);
+    }
+    for normal in [
+        json!({}),
+        json!({"hookSpecificOutput": {"additionalContext": "retain normal approval"}}),
+        json!({"hookSpecificOutput": {"updatedInput": {"command": "safe rewrite"}}}),
+    ] {
+        for (legacy, structured) in [(&normal, &allow), (&allow, &normal)] {
+            let config = serde_json::from_value(json!({
+                "server": "hook_fixture", "tool": "scan", "input": {"result": {
+                    "content": [{"type": "text", "text": legacy.to_string()}],
+                    "structuredContent": structured
+                }}
+            }))
+            .unwrap();
+            let raw = McpToolHandler::new(config)
+                .run(
+                    &input,
+                    &ha_core::hooks::env::HookEnv::empty(),
+                    Instant::now() + Duration::from_secs(5),
+                )
+                .await;
+            assert_eq!(raw.exit_code, Some(0));
+            let parsed = ha_core::hooks::parse::parse(&raw, HookEvent::PreToolUse);
+            assert!(
+                !parsed.permission_allow,
+                "normal approval must not become explicit allow"
+            );
+            assert_eq!(parsed.decision, HookDecision::Allow);
+            assert_eq!(
+                parsed.updated_input,
+                normal["hookSpecificOutput"].get("updatedInput").cloned()
+            );
+            assert_eq!(
+                parsed.additional_context.as_deref(),
+                normal["hookSpecificOutput"]["additionalContext"].as_str()
+            );
         }
     }
     let wire = json!({"content": [{"type": "text", "text": "human fallback"}], "structuredContent": {"answer": 42}});

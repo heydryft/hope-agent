@@ -43,7 +43,7 @@ impl HookContribution {
 }
 
 /// Precedence rank — higher wins (design doc §9.1).
-pub(super) fn rank(d: &HookDecision) -> u8 {
+fn rank(d: &HookDecision) -> u8 {
     match d {
         HookDecision::Allow => 0,
         HookDecision::Ask => 1,

@@ -409,16 +409,6 @@ mod tests {
                         .unwrap();
                     assert_eq!(serde_json::from_str::<Value>(json).unwrap(), value);
                     assert!(!normalized.contains("not model content"));
-                    assert_eq!(
-                        normalize_result_for(
-                            &result,
-                            "server",
-                            "tool",
-                            McpToolResultFormat::Hook(ha_core::hooks::HookEvent::PreToolUse)
-                        )
-                        .unwrap(),
-                        text.unwrap_or_default()
-                    );
                 }
             }
         }

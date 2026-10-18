@@ -384,7 +384,7 @@ matcher 目标按事件取（`HookInput::matcher_target`）：`tool_name`（工�
 ### 10.3 mcp_tool
 
 - 调 `mcp::invoke::call_tool_for_hook`，经同一 MCP 注册表、连接、并发及超时路径；内部校验 MCP 就绪，未就绪仍为非阻断错误。
-- 成功结果的 `structuredContent` 只有包含已知 Hook 字段且可解码为 `HookOutput` 时才作为协议候选；缺失、空对象、未知元数据或畸形字段沿原正文回退。双通道均为协议时按真实 `HookInput` 枚举对应事件比较，保留较严格的 deny/block/defer/ask，`continue:false` 优先，防止附加元数据或较弱决定覆盖旧拒绝。结构化 JSON 是协议载荷，不拼接对话的 `[structuredContent]` 标记或重复正文，保证 `HookOutput` 的 deny/block/ask/continue:false 可被完整解析；`_meta` 不转发，`isError` 继续走失败分支。格式由内核调用方选择，不接受工具入参切换。
+- 成功结果的 `structuredContent` 只有包含已知 Hook 字段且可解码为 `HookOutput` 时才作为协议候选；缺失、未知元数据或畸形字段沿原正文回退；空对象表示保持正常审批。双通道均为协议时按真实 `HookInput` 枚举对应事件比较，保留较严格的 deny/block/defer/ask，`continue:false` 优先，防止附加元数据或较弱决定覆盖旧拒绝。双协议保守合并上下文，旧输入/结果改写优先；仅两通道均显式allow才可跳过软审批，不能让普通上下文或改写响应变成自动批准。结构化 JSON 是协议载荷，不拼接对话的 `[structuredContent]` 标记或重复正文，保证 `HookOutput` 的 deny/block/ask/continue:false 可被完整解析；`_meta` 不转发，`isError` 继续走失败分支。格式由内核调用方选择，不接受工具入参切换。
 - `input` 模板支持 `${dotted.path}` 占位符插值（`tool_input.*` / `tool_response.*` / `session_id` / `cwd` / `agent_id` / `tool_name` / `prompt`）；未解析占位符留字面量 + warn。identity 含 input hash。
 
 ### 10.4 prompt
