@@ -12,6 +12,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use ha_core::mcp_hooks::McpToolResultFormat;
 use rmcp::model::{CallToolRequestParams, CallToolResult, ContentBlock};
 use serde_json::Value;
 use tokio::time::timeout;
@@ -34,6 +35,15 @@ pub async fn call_tool(
     name: &str,
     args: &Value,
     ctx: &ha_core::tools::ToolExecContext,
+) -> anyhow::Result<String> {
+    call_tool_with_format(name, args, ctx, McpToolResultFormat::Conversation).await
+}
+
+pub(crate) async fn call_tool_with_format(
+    name: &str,
+    args: &Value,
+    ctx: &ha_core::tools::ToolExecContext,
+    format: McpToolResultFormat,
 ) -> anyhow::Result<String> {
     let manager = McpManager::global().ok_or_else(|| {
         anyhow::anyhow!(
@@ -92,7 +102,7 @@ pub async fn call_tool(
         .map_err(|e| anyhow::anyhow!("MCP per-server semaphore closed: {e}"))?;
 
     let start = std::time::Instant::now();
-    let fut = dispatch_inner(handle.clone(), &entry.original_tool_name, args);
+    let fut = dispatch_inner(handle.clone(), &entry.original_tool_name, args, format);
     let result: anyhow::Result<String> = if call_timeout_secs == 0 {
         match fut.await {
             Ok(body) => Ok(body),
@@ -171,6 +181,7 @@ async fn dispatch_inner(
     handle: Arc<ServerHandle>,
     original_name: &str,
     args: &Value,
+    format: McpToolResultFormat,
 ) -> McpResult<String> {
     let cfg_name = handle.config.read().await.name.clone();
     let peer = handle.peer().await?;
@@ -200,7 +211,7 @@ async fn dispatch_inner(
             message: format!("{e}"),
         })?;
 
-    let body = normalize_result(&result, &cfg_name, original_name)?;
+    let body = normalize_result_for(&result, &cfg_name, original_name, format)?;
 
     // Reset the per-server failure counter on a clean call so the
     // watchdog knows the connection is healthy.
@@ -215,7 +226,12 @@ async fn dispatch_inner(
 /// present JSON null is meaningful; rmcp preserves it as `Some(Value::Null)`.
 /// Error diagnostics keep their existing text-only contract: copying structured
 /// payloads or protocol metadata there would also copy them into Learning events.
-fn normalize_result(result: &CallToolResult, server: &str, tool: &str) -> McpResult<String> {
+fn normalize_result_for(
+    result: &CallToolResult,
+    server: &str,
+    tool: &str,
+    format: McpToolResultFormat,
+) -> McpResult<String> {
     let mut body = normalize_content(&result.content);
     if result.is_error.unwrap_or(false) {
         return Err(McpError::ToolFailed {
@@ -229,6 +245,9 @@ fn normalize_result(result: &CallToolResult, server: &str, tool: &str) -> McpRes
         });
     }
     if let Some(structured) = &result.structured_content {
+        if matches!(format, McpToolResultFormat::Hook) {
+            return Ok(structured.to_string());
+        }
         if !body.is_empty() {
             body.push_str("\n\n");
         }
@@ -304,6 +323,9 @@ pub fn normalize_content(blocks: &[ContentBlock]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn normalize_result(result: &CallToolResult, server: &str, tool: &str) -> McpResult<String> {
+        normalize_result_for(result, server, tool, McpToolResultFormat::Conversation)
+    }
     fn text(t: &str) -> ContentBlock {
         ContentBlock::text(t)
     }
@@ -385,6 +407,11 @@ mod tests {
                         .unwrap();
                     assert_eq!(serde_json::from_str::<Value>(json).unwrap(), value);
                     assert!(!normalized.contains("not model content"));
+                    assert_eq!(
+                        normalize_result_for(&result, "server", "tool", McpToolResultFormat::Hook)
+                            .unwrap(),
+                        value.to_string()
+                    );
                 }
             }
         }
@@ -410,20 +437,22 @@ mod tests {
                 "structuredContent": {"private": "not diagnostic content"},
                 "isError": true
             }));
-            match normalize_result(&result, "server", "tool").unwrap_err() {
-                McpError::ToolFailed {
-                    server,
-                    tool,
-                    message,
-                } => {
-                    assert_eq!(server, "server");
-                    assert_eq!(tool, "tool");
-                    assert_eq!(
+            for format in [McpToolResultFormat::Conversation, McpToolResultFormat::Hook] {
+                match normalize_result_for(&result, "server", "tool", format).unwrap_err() {
+                    McpError::ToolFailed {
+                        server,
+                        tool,
                         message,
-                        text.unwrap_or("server reported isError=true with no body")
-                    );
+                    } => {
+                        assert_eq!(server, "server");
+                        assert_eq!(tool, "tool");
+                        assert_eq!(
+                            message,
+                            text.unwrap_or("server reported isError=true with no body")
+                        );
+                    }
+                    other => panic!("unexpected error: {other}"),
                 }
-                other => panic!("unexpected error: {other}"),
             }
         }
     }

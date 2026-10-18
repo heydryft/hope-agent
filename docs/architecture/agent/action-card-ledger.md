@@ -2,7 +2,7 @@
 
 ## 2026-10-18：接续 MCP 交付与每日证据对账
 
-精确 prepare 先返回本任务旧 run，再按 `--resume` 成功续跑 `20261017T103309-38386cd4`；原始基线 **61737ff55b7d349bffa20c5da43742098da584b3** 保留，最新 main **630846090637999d62af23897e6358bb99234160**，核验时间 **2026-10-18T10:26:48.146167+00:00**。本轮只接续 [PR #837](https://github.com/shiwenwen/hope-agent/pull/837)：将已核验 main 的 TLS 补丁和台账并入原分支，解决两处文档并发冲突；MCP 运行时代码相对原头 `19cb3334` 不变。#838 已 MERGED，统一决策 `OPS-CODE-REVIEW-CAPACITY` 由其精确头云端复审成功证据解除；#837 仍须自己的新头复审与 CI，不能沿用 #838 的审查或旧头 9/9 CI。
+精确 prepare 先返回本任务旧 run，再按 `--resume` 成功续跑 `20261017T103309-38386cd4`；原始基线 **61737ff55b7d349bffa20c5da43742098da584b3** 保留，最新 main **630846090637999d62af23897e6358bb99234160**，核验时间 **2026-10-18T10:26:48.146167+00:00**。本轮只接续 [PR #837](https://github.com/shiwenwen/hope-agent/pull/837)：将已核验 main 的 TLS 补丁和台账并入原分支，解决两处文档并发冲突；#837 复审发现对话后缀会破坏 MCP Hook JSON：已按调用方区分对话正文与 Hook 协议，后者优先完整结构化 JSON、缺失时沿旧正文；同一连接/并发/超时/错误路径保留，不接受工具入参切换。新增内存 JSON-RPC → rmcp → 装配 → Hook runner → parser 回归，覆盖 deny/block/ask/continue:false。#838 已 MERGED，统一决策 `OPS-CODE-REVIEW-CAPACITY` 由其精确头云端复审成功证据解除；#837 仍须自己的新头复审与 CI，不能沿用 #838 的审查或旧头 9/9 CI。
 
 00–12 的13组 LATEST.md/完整 JSON 和不可变双文件全部读取校验；仅12更新为10-18。`12-FTR-002/006/007` 延续原ID，吸收来源版本/规则版本、动作回执未知、诊断与整任务验收分离的研究边界；新增前沿卡0，不把论文数字或方案当 Hope 成绩，不重建已有 hash、Workflow 或 lease。常规兼容维护与有界合成复现沿 policy 授权，原产品控制合同、正式 Goal 接入和完整专项仍待各自范围冻结。本轮不运行这些实验。
 
@@ -14,7 +14,7 @@
 | P0/P1 / automation-7，`07-HA-RT-008` | 托管 Chrome；缺四平台完整提升凭据 | 字节/SHA/许可及原生隔离冒烟齐全再提升，不升级宿主 |
 | P1 / hope-agent-3，`rustsec:zip-extraction-20261017` | 三项 ZIP 公告沿依赖主责与10-19目标，不接管分支 | 安全权限/符号链接隔离夹具、兼容性证据；固定资产与路径守卫保留，不强塞 ZIP9 |
 | P2 / hope-agent-3，`rustsec:zbus-standalone-20261018` | 三项停止独立维护提示，非新漏洞、无硬停用日期 | 10-25前核上游 zbus6/Linux 传递链兼容路径，不强行跨主版本替换 |
-| P2 / automation-7，`DISC-833` / `DISC-815` | 88API赞助咨询 / 第三方品牌MCP模板收录；来源为首份成功社区归档 | 沿统一决策 `DISC-833-SPONSORSHIP` / `DISC-815-BRANDED-MCP` 等所有者选择；不公开回复、报价、承诺或实施品牌入口 |
+| P2 / automation-7，`DISC-833` / `DISC-815` | 88API赞助咨询 / 第三方品牌MCP模板收录；来源为首份成功社区归档 | 所有者仅批准品牌MCP范围评估，赞助暂缓；复用现有表单可行，但必需凭据引用阻断和可核官方固定来源仍缺；未批准实施或公开回复/报价/承诺 |
 | P1 / automation-7，`04-A7` / `10-A14` | OpenViking5000+1与Signal逐账号/daemon重放继续排队 | 本在途交付收口后选下一有界合成包；真实服务/账号门保留 |
 
 回归66项仍沿 `96c12b81` 原基线，不是本轮复验；00与09继续保留自身周期和源码时效边界。下轮周一做完整盘点，按10-19 ZIP、10-21 Node、10-23模型及10-25 zbus目标核主责最新回执；不重复目录PR、历史评测或已解决的额度提问。无真实Provider/账号/费用/用户数据/生产写入/宿主升级。
@@ -380,7 +380,7 @@ prepare `exit=0/ok=true`；基线 **29aef3279f1c19610fd58b5dc9c8b53dda3f9f4b**�
 | `04-A7` | 部分交付 | 10-01 A7 → 旧 URI 卡 | #723 的版本绑定 URI 保留；本轮 task 终态匿名 fixture 关联 04-A10，完整 list/read/batch/commit 与真实版本部署矩阵仍缺证据。 |
 | `04-A8` | 待授权 | A8 | Parse 与本地抽取同 chunker 基准需文档数据/账户/费用批准；未调用外部解析。 |
 | `04-A9` | 待授权 | 10-01 A9 | #777 已合入 Global 召回修复；撤权、来源更新竞态与最终引用/行动的行为评测仍未运行，沿数据/模型预算门。 |
-| `05-A1` | 部分交付 | 10-02 A1 → 旧 MCP 双栈 | #737 逐请求版本/缓存字段仍在；rmcp 3.5.0 候选、新旧官方 conformance/并发 NDJSON 限额缺完整当前构建 fixture，不把 SDK 版本等同 Hope 结果。；10-18继续原PR837，同步main文档冲突，运行时代码相对19cb3334不变；旧头9/9成功、额度恢复，最终新头复审/CI/保护合并待本轮回执。 |
+| `05-A1` | 部分交付 | 10-02 A1 → 旧 MCP 双栈 | #737 逐请求版本/缓存字段仍在；rmcp 3.5.0 候选、新旧官方 conformance/并发 NDJSON 限额缺完整当前构建 fixture，不把 SDK 版本等同 Hope 结果。；10-18继续原PR837，同步main文档冲突，复审新增Hook协议格式修复及内存全链回归；旧头CI不作新头验收，最终新头复审/CI/保护合并待本轮回执。 |
 | `05-A10` | 已交付 | 09-18 A4（新增） | #737 已交付的 ACP tool_call 首报/重放可选 name，Control 信息性读取、空值回退；权限不读取 name。 |
 | `05-A11` | 待决策 | 10-02 A7 | 远程 Skill 来源主键、manifest 摘要、动态技能确认与撤销合同未冻结；资源读取不激活、allowed-tools 不授予权限，缓存不入本地扫描目录。 |
 | `05-A12` | 待决策 | 10-02 A8 | MCP Apps Host 是默认关闭的新能力面；需来源/会话/iframe/CSP/Host权限合同，不能直接加载 Registry HTML 或继承 owner 凭据。 |
@@ -880,5 +880,5 @@ A07（新渠道与资格）、A08（多维计价）、A09（运行时升级与�
 | --- | --- | --- |
 | `rustsec:zip-extraction-20261017` | 待证据 | RUSTSEC-2026-0367/0368/0369; dependency intake；主责 `hope-agent-3`；三项ZIP公告统一组；已复核直接/传递调用，安全权限/符号链接隔离夹具及兼容维护待10-19接续；不强行跨主版本，不宣称全图安全。 |
 | `rustsec:zbus-standalone-20261018` | 待证据 | RUSTSEC-2026-0370/0371/0372; Oct18 dependency evidence；主责 `hope-agent-3`；停止独立维护提示，非新漏洞且无硬停用日；10-25前核Linux传递链与上游zbus6兼容路径，无宿主变更。 |
-| `DISC-833` | 待决策 | github-discussions:DISC-833; Oct18 immutable intake；主责 `automation-7`；88API非独家赞助咨询，沿DISC-833-SPONSORSHIP等所有者决定；归档/入队不代表接受商务关系，不回复或报价。 |
-| `DISC-815` | 待决策 | github-discussions:DISC-815; Oct18 immutable intake；主责 `automation-7`；第三方品牌MCP设置模板沿DISC-815-BRANDED-MCP等所有者决定；不实现品牌入口或外部接入。 |
+| `DISC-833` | 待决策 | github-discussions:DISC-833; Oct18 immutable intake；主责 `automation-7`；88API非独家赞助咨询，沿DISC-833-SPONSORSHIP；10-18所有者选择只评估品牌MCP，赞助暂缓，不回复或报价。 |
+| `DISC-815` | 待决策 | github-discussions:DISC-815; Oct18 immutable intake；主责 `automation-7`；第三方品牌MCP模板沿DISC-815-BRANDED-MCP；10-18所有者仅批准范围评估，现有添加表单可复用，必需凭据引用阻断及官方固定来源仍缺；评估完成，实施/公开回复仍未授权。 |
