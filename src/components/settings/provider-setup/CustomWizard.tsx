@@ -35,6 +35,7 @@ import {
   Settings2,
 } from "lucide-react"
 import { SortableModelEditor } from "./ModelEditor"
+import { ModelDiscovery } from "./ModelDiscovery"
 import type { ApiType, Currency, ModelConfig, ThinkingStyleType } from "./types"
 
 interface CustomWizardProps {
@@ -397,6 +398,29 @@ export function CustomWizard({
                 {t("common.add")}
               </Button>
             </div>
+            <ModelDiscovery
+              config={{
+                id: "",
+                name: providerName,
+                apiType,
+                baseUrl,
+                apiKey,
+                authProfiles: [],
+                models,
+                userAgent: "claude-code/0.1.0",
+                thinkingStyle,
+                currency,
+                enabled: true,
+              }}
+              onAdd={(added) =>
+                setModels([
+                  ...models,
+                  ...added.filter(
+                    (model) => !models.some((existing) => existing.id.trim() === model.id),
+                  ),
+                ])
+              }
+            />
             <div className="space-y-2.5">
               <DndContext
                 sensors={modelSensors}
