@@ -9,14 +9,21 @@ const mocks = vi.hoisted(() => ({
   listArtifacts: vi.fn(),
   getArtifact: vi.fn(),
   listArtifactVersions: vi.fn(),
+  verifyArtifact: vi.fn(),
   reset: vi.fn(),
   transitionTo: vi.fn(),
   drag: vi.fn(),
   viewerRef: { current: null },
   t: (key: string) => key,
   returned: null as unknown as ArtifactRecord,
+  activeTransport: null as null | Record<string, unknown>,
+  revision: 0,
 }))
-vi.mock("@/lib/transport-provider", () => ({ getTransport: () => mocks }))
+vi.mock("@/lib/transport-provider", () => ({
+  getTransport: () => mocks.activeTransport ?? mocks,
+  getTransportRevision: () => mocks.revision,
+  useTransportRevision: () => mocks.revision,
+}))
 vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: mocks.t }) }))
 vi.mock("@/hooks/useDragWidth", () => ({ useDragWidth: () => mocks.drag }))
 vi.mock("@/hooks/useFullscreenTransition", () => ({
@@ -81,6 +88,8 @@ beforeEach(() => {
   mocks.getArtifact.mockReset().mockResolvedValue(saved)
   mocks.listArtifactVersions.mockReset().mockResolvedValue([])
   mocks.returned = saved
+  mocks.activeTransport = null
+  mocks.revision = 0
 })
 afterEach(cleanup)
 
@@ -145,4 +154,77 @@ test("switching selection blocks updates until the new artifact identity has loa
   await waitFor(() => expect(update).not.toBeDisabled())
   fireEvent.click(update)
   expect(screen.getByText("Target second v4")).toBeTruthy()
+})
+
+test("a hidden runtime switch clears old selections even when both hosts use the same artifact ID", async () => {
+  mocks.listArtifacts.mockResolvedValue([saved])
+  const view = render(<ArtifactsView isViewVisible />)
+  fireEvent.click(await screen.findByRole("button", { name: /Registered report/ }))
+  await screen.findByRole("button", { name: "artifacts.registration.update" })
+  view.rerender(<ArtifactsView isViewVisible={false} />)
+  const other = { ...saved, title: "Other host report", currentVersion: 8 }
+  let finishList!: (rows: ArtifactRecord[]) => void
+  const otherTransport = {
+    listArtifacts: vi.fn(
+      () =>
+        new Promise<ArtifactRecord[]>((resolve) => {
+          finishList = resolve
+        }),
+    ),
+    getArtifact: vi.fn().mockResolvedValue(other),
+    listArtifactVersions: vi.fn().mockResolvedValue([]),
+  }
+  mocks.activeTransport = otherTransport
+  mocks.revision++
+  view.rerender(<ArtifactsView isViewVisible={false} />)
+  expect(screen.queryByRole("button", { name: "artifacts.registration.update" })).toBeNull()
+  view.rerender(<ArtifactsView isViewVisible />)
+  expect(screen.queryByRole("button", { name: "artifacts.registration.update" })).toBeNull()
+  await act(async () => finishList([other]))
+  fireEvent.click(await screen.findByRole("button", { name: /Other host report/ }))
+  fireEvent.click(await screen.findByRole("button", { name: "artifacts.registration.update" }))
+  expect(screen.getByText("Target artifact-new v8")).toBeTruthy()
+  expect(otherTransport.getArtifact).toHaveBeenCalledWith(saved.id)
+})
+
+test("switching runtime closes an already opened update registration", async () => {
+  mocks.listArtifacts.mockResolvedValue([saved])
+  const view = render(<ArtifactsView isViewVisible />)
+  fireEvent.click(await screen.findByRole("button", { name: /Registered report/ }))
+  fireEvent.click(await screen.findByRole("button", { name: "artifacts.registration.update" }))
+  expect(screen.getByText("Target artifact-new v1")).toBeTruthy()
+  mocks.activeTransport = { listArtifacts: vi.fn().mockResolvedValue([]) }
+  mocks.revision++
+  view.rerender(<ArtifactsView isViewVisible={false} />)
+  expect(screen.queryByText("Target artifact-new v1")).toBeNull()
+})
+
+test("an old-host verification response cannot replace the new host update target", async () => {
+  let finishVerify!: (value: unknown) => void
+  mocks.verifyArtifact.mockReturnValue(
+    new Promise((resolve) => {
+      finishVerify = resolve
+    }),
+  )
+  mocks.listArtifacts.mockResolvedValue([saved])
+  const view = render(<ArtifactsView isViewVisible />)
+  fireEvent.click(await screen.findByRole("button", { name: /Registered report/ }))
+  fireEvent.click(await screen.findByRole("button", { name: "artifacts.verify" }))
+  const other = { ...saved, title: "Other host report", currentVersion: 8 }
+  mocks.activeTransport = {
+    listArtifacts: vi.fn().mockResolvedValue([other]),
+    getArtifact: vi.fn().mockResolvedValue(other),
+    listArtifactVersions: vi.fn().mockResolvedValue([]),
+  }
+  mocks.revision++
+  view.rerender(<ArtifactsView isViewVisible />)
+  fireEvent.click(await screen.findByRole("button", { name: /Other host report/ }))
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", { name: "artifacts.registration.update" }),
+    ).not.toBeDisabled(),
+  )
+  await act(async () => finishVerify({ status: "passed" }))
+  fireEvent.click(screen.getByRole("button", { name: "artifacts.registration.update" }))
+  expect(screen.getByText("Target artifact-new v8")).toBeTruthy()
 })
