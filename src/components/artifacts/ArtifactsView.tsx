@@ -856,8 +856,10 @@ export default function ArtifactsView({ isViewVisible, onAddQuoteToChat }: Artif
               <Button
                 variant="outline"
                 size="sm"
-                disabled={busy !== null}
-                onClick={() => setRegistration({ artifact: selected })}
+                disabled={busy !== null || selected.id !== selectedId}
+                onClick={() => {
+                  if (selected.id === selectedId) setRegistration({ artifact: selected })
+                }}
               >
                 {t("artifacts.registration.update")}
               </Button>

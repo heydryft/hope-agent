@@ -121,3 +121,28 @@ test("update is bound to the selected version and refreshes it without a duplica
   expect(screen.getAllByText("artifacts.registration.updatedVersion")).toHaveLength(2)
   expect(current.currentVersion).toBe(5)
 })
+
+test("switching selection blocks updates until the new artifact identity has loaded", async () => {
+  const second = { ...saved, id: "second", title: "Second report", currentVersion: 4 }
+  let finishSecond!: (value: ArtifactRecord) => void
+  mocks.listArtifacts.mockResolvedValue([saved, second])
+  mocks.getArtifact.mockImplementation((id: string) =>
+    id === "second"
+      ? new Promise((resolve) => {
+          finishSecond = resolve
+        })
+      : Promise.resolve(saved),
+  )
+  render(<ArtifactsView isViewVisible />)
+  fireEvent.click(await screen.findByRole("button", { name: /Registered report/ }))
+  await screen.findByRole("button", { name: "artifacts.registration.update" })
+  fireEvent.click(screen.getByRole("button", { name: /Second report/ }))
+  const update = screen.getByRole("button", { name: "artifacts.registration.update" })
+  expect(update).toBeDisabled()
+  fireEvent.click(update)
+  expect(screen.queryByText("Target artifact-new v1")).toBeNull()
+  await act(async () => finishSecond(second))
+  await waitFor(() => expect(update).not.toBeDisabled())
+  fireEvent.click(update)
+  expect(screen.getByText("Target second v4")).toBeTruthy()
+})
