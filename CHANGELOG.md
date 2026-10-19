@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Gemini 4 Argon 模型**：在 Google 模板中加入 GA 稳定型号，并适配 OpenAI Chat 兼容端点的推理档位映射与当前官方价格；同步说明同步输出上限和计划可用性。 (#PR)
+- **Gemini 4 Argon 模型**：在 Google 模板中加入 GA 稳定型号，并适配 OpenAI Chat 兼容端点的推理档位映射与当前官方价格；同步说明同步输出上限和计划可用性。 (#841)
 
 ### Fixed
 
