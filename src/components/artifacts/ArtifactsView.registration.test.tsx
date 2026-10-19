@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import type { ReactNode } from "react"
+import { useEffect, type ReactNode } from "react"
 import { afterEach, beforeEach, expect, test, vi } from "vitest"
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import ArtifactsView from "./ArtifactsView"
@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   returned: null as unknown as ArtifactRecord,
   activeTransport: null as null | Record<string, unknown>,
   revision: 0,
+  dialogUnmount: vi.fn(),
 }))
 vi.mock("@/lib/transport-provider", () => ({
   getTransport: () => mocks.activeTransport ?? mocks,
@@ -52,17 +53,20 @@ vi.mock("./ArtifactRegistrationDialog", () => ({
   }: {
     artifact?: ArtifactRecord
     onImported: (artifact: ArtifactRecord) => void
-  }) => (
-    <div>
-      <input aria-label="runtime-host-path" defaultValue="" />
-      {artifact && (
-        <p>
-          Target {artifact.id} v{artifact.currentVersion}
-        </p>
-      )}
-      <button onClick={() => onImported(mocks.returned)}>complete registration</button>
-    </div>
-  ),
+  }) => {
+    useEffect(() => () => mocks.dialogUnmount(), [])
+    return (
+      <div>
+        <input aria-label="runtime-host-path" defaultValue="" />
+        {artifact && (
+          <p>
+            Target {artifact.id} v{artifact.currentVersion}
+          </p>
+        )}
+        <button onClick={() => onImported(mocks.returned)}>complete registration</button>
+      </div>
+    )
+  },
 }))
 
 const saved: ArtifactRecord = {
@@ -92,6 +96,7 @@ beforeEach(() => {
   mocks.returned = saved
   mocks.activeTransport = null
   mocks.revision = 0
+  mocks.dialogUnmount.mockClear()
 })
 afterEach(cleanup)
 
@@ -246,3 +251,27 @@ test("routine access ticket renewal preserves the same host registration and typ
     "/managed/new-report.html",
   )
 })
+
+test.each(["create", "update"])(
+  "leaving the persistent view unmounts %s registration and does not reopen it",
+  async (mode) => {
+    mocks.listArtifacts.mockResolvedValue([saved])
+    const view = render(<ArtifactsView isViewVisible />)
+    if (mode === "update") {
+      fireEvent.click(await screen.findByRole("button", { name: /Registered report/ }))
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "artifacts.registration.update" }),
+        ).not.toBeDisabled(),
+      )
+    }
+    fireEvent.click(screen.getByRole("button", { name: `artifacts.registration.${mode}` }))
+    expect(screen.getByRole("textbox", { name: "runtime-host-path" })).toBeTruthy()
+    view.rerender(<ArtifactsView isViewVisible={false} />)
+    expect(screen.queryByRole("textbox", { name: "runtime-host-path" })).toBeNull()
+    expect(mocks.dialogUnmount).toHaveBeenCalledOnce()
+    view.rerender(<ArtifactsView isViewVisible />)
+    expect(screen.queryByRole("textbox", { name: "runtime-host-path" })).toBeNull()
+    expect(mocks.dialogUnmount).toHaveBeenCalledOnce()
+  },
+)

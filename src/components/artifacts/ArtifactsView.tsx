@@ -278,6 +278,10 @@ export default function ArtifactsView({ isViewVisible, onAddQuoteToChat }: Artif
     artifact?: ArtifactRecord
     transport: typeof transport
   } | null>(null)
+  // PersistentViewSurface hides this component without unmounting it. End
+  // explicit registration on navigation so the dialog aborts/cleans its source
+  // and cannot reopen with a stale pending operation when the view returns.
+  if (!isViewVisible && registration) setRegistration(null)
   const listGeneration = useRef(0)
   const [exportFormat, setExportFormat] = useState<ArtifactExportFormat>("html")
   const selectedTarget = useMemo<Extract<FileTarget, { kind: "artifact" }> | null>(
@@ -676,7 +680,7 @@ export default function ArtifactsView({ isViewVisible, onAddQuoteToChat }: Artif
         </Button>
       </header>
 
-      {registration && registration.transport === transport && (
+      {isViewVisible && registration && registration.transport === transport && (
         <ArtifactRegistrationDialog
           artifact={registration.artifact}
           onClose={() => setRegistration(null)}
