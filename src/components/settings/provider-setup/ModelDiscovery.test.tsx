@@ -181,23 +181,124 @@ test("the custom-provider wizard appends confirmed models to its draft", async (
   mock.call.mockResolvedValue(discovery)
   function Wizard() {
     const [models, setModels] = useState<ModelConfig[]>(config.models)
-    return <CustomWizard customStep={2} setCustomStep={vi.fn()}
-      apiType="openai-chat" setApiType={vi.fn()} providerName="Custom" setProviderName={vi.fn()}
-      baseUrl={config.baseUrl} setBaseUrl={vi.fn()} apiKey="" setApiKey={vi.fn()}
-      models={models} setModels={setModels} thinkingStyle="none" setThinkingStyle={vi.fn()}
-      currency="USD" setCurrency={vi.fn()} showApiKey={false} setShowApiKey={vi.fn()}
-      testResult={null} setTestResult={vi.fn()} testLoading={false} setTestLoading={vi.fn()}
-      saving={false} error="" onBack={vi.fn()} onSave={() => save(models)} />
+    return (
+      <CustomWizard
+        customStep={2}
+        setCustomStep={vi.fn()}
+        allowPrivateNetwork={false}
+        setAllowPrivateNetwork={vi.fn()}
+        apiType="openai-chat"
+        setApiType={vi.fn()}
+        providerName="Custom"
+        setProviderName={vi.fn()}
+        baseUrl={config.baseUrl}
+        setBaseUrl={vi.fn()}
+        apiKey=""
+        setApiKey={vi.fn()}
+        models={models}
+        setModels={setModels}
+        thinkingStyle="none"
+        setThinkingStyle={vi.fn()}
+        currency="USD"
+        setCurrency={vi.fn()}
+        showApiKey={false}
+        setShowApiKey={vi.fn()}
+        testResult={null}
+        setTestResult={vi.fn()}
+        testLoading={false}
+        setTestLoading={vi.fn()}
+        saving={false}
+        error=""
+        onBack={vi.fn()}
+        onSave={() => save(models)}
+      />
+    )
   }
   render(<Wizard />)
   fireEvent.click(screen.getByRole("button", { name: "provider.discovery.action" }))
   fireEvent.click(await screen.findByRole("switch", { name: "provider.discovery.select new" }))
-  fireEvent.change(screen.getByRole("spinbutton", { name: "provider.discovery.context new" }), { target: { value: "16000" } })
-  fireEvent.change(screen.getByRole("spinbutton", { name: "provider.discovery.output new" }), { target: { value: "2000" } })
+  fireEvent.change(screen.getByRole("spinbutton", { name: "provider.discovery.context new" }), {
+    target: { value: "16000" },
+  })
+  fireEvent.change(screen.getByRole("spinbutton", { name: "provider.discovery.output new" }), {
+    target: { value: "2000" },
+  })
   fireEvent.click(screen.getByRole("switch", { name: "provider.discovery.confirm" }))
   fireEvent.click(screen.getByRole("button", { name: "provider.discovery.add 1" }))
   expect(save).not.toHaveBeenCalled()
-  expect(mock.call).toHaveBeenCalledExactlyOnceWith("discover_provider_models", { config: expect.objectContaining({ apiKey: "", baseUrl: config.baseUrl, models: config.models, currency: "USD" }) })
+  expect(mock.call).toHaveBeenCalledExactlyOnceWith("discover_provider_models", {
+    config: expect.objectContaining({
+      apiKey: "",
+      baseUrl: config.baseUrl,
+      models: config.models,
+      currency: "USD",
+      allowPrivateNetwork: false,
+    }),
+  })
   expect(screen.getByDisplayValue("New model")).toBeTruthy()
   expect(screen.getByDisplayValue("Saved name")).toBeTruthy()
 })
+
+test.each([false, true])(
+  "wizard private-network consent defaults off and is sent only as selected: %s",
+  async (allowed) => {
+    mock.call.mockImplementation(async (command: string) =>
+      command === "test_provider" ? "Connected" : discovery,
+    )
+    function Wizard() {
+      const [step, setStep] = useState(1)
+      const [privateNetwork, setPrivateNetwork] = useState(false)
+      return (
+        <CustomWizard
+          customStep={step}
+          setCustomStep={setStep}
+          allowPrivateNetwork={privateNetwork}
+          setAllowPrivateNetwork={setPrivateNetwork}
+          apiType="openai-chat"
+          setApiType={vi.fn()}
+          providerName="Local"
+          setProviderName={vi.fn()}
+          baseUrl="http://192.168.50.5:11434/v1"
+          setBaseUrl={vi.fn()}
+          apiKey="synthetic-local-key"
+          setApiKey={vi.fn()}
+          models={[]}
+          setModels={vi.fn()}
+          thinkingStyle="none"
+          setThinkingStyle={vi.fn()}
+          currency="USD"
+          setCurrency={vi.fn()}
+          showApiKey={false}
+          setShowApiKey={vi.fn()}
+          testResult={null}
+          setTestResult={vi.fn()}
+          testLoading={false}
+          setTestLoading={vi.fn()}
+          saving={false}
+          error=""
+          onBack={vi.fn()}
+          onSave={vi.fn()}
+        />
+      )
+    }
+    render(<Wizard />)
+    const consent = screen.getByRole("switch", { name: "provider.allowPrivateNetwork" })
+    expect(consent).not.toBeChecked()
+    if (allowed) fireEvent.click(consent)
+    fireEvent.click(screen.getByRole("button", { name: "provider.testConnection" }))
+    await waitFor(() =>
+      expect(mock.call).toHaveBeenCalledWith("test_provider", {
+        config: expect.objectContaining({ allowPrivateNetwork: allowed }),
+      }),
+    )
+    fireEvent.click(screen.getByRole("button", { name: "common.nextStep" }))
+    fireEvent.click(screen.getByRole("button", { name: "provider.discovery.action" }))
+    await screen.findByText("New model")
+    expect(mock.call).toHaveBeenCalledWith("discover_provider_models", {
+      config: expect.objectContaining({
+        allowPrivateNetwork: allowed,
+        baseUrl: "http://192.168.50.5:11434/v1",
+      }),
+    })
+  },
+)

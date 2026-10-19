@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next"
 import { getTransport } from "@/lib/transport-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
 import {
   Select,
   SelectContent,
@@ -39,6 +40,8 @@ import { ModelDiscovery } from "./ModelDiscovery"
 import type { ApiType, Currency, ModelConfig, ThinkingStyleType } from "./types"
 
 interface CustomWizardProps {
+  allowPrivateNetwork: boolean
+  setAllowPrivateNetwork: (v: boolean) => void
   customStep: number
   setCustomStep: (v: number) => void
   apiType: ApiType
@@ -70,6 +73,8 @@ interface CustomWizardProps {
 }
 
 export function CustomWizard({
+  allowPrivateNetwork,
+  setAllowPrivateNetwork,
   customStep,
   setCustomStep,
   apiType,
@@ -155,6 +160,7 @@ export function CustomWizard({
           userAgent: "claude-code/0.1.0",
           thinkingStyle,
           currency,
+          allowPrivateNetwork,
           models,
           enabled: true,
         },
@@ -340,6 +346,21 @@ export function CustomWizard({
                 </Select>
                 <p className="text-[11px] text-muted-foreground">{t("provider.currencyDesc")}</p>
               </div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <label htmlFor="custom-provider-private-network" className="text-xs font-medium">
+                    {t("provider.allowPrivateNetwork")}
+                  </label>
+                  <p className="text-[11px] text-muted-foreground">
+                    {t("provider.allowPrivateNetworkDesc")}
+                  </p>
+                </div>
+                <Switch
+                  id="custom-provider-private-network"
+                  checked={allowPrivateNetwork}
+                  onCheckedChange={setAllowPrivateNetwork}
+                />
+              </div>
               <Button
                 variant="secondary"
                 size="sm"
@@ -410,6 +431,7 @@ export function CustomWizard({
                 userAgent: "claude-code/0.1.0",
                 thinkingStyle,
                 currency,
+                allowPrivateNetwork,
                 enabled: true,
               }}
               onAdd={(added) =>
@@ -455,6 +477,7 @@ export function CustomWizard({
                                   apiKey: apiKey || "ollama",
                                   userAgent: "claude-code/0.1.0",
                                   currency,
+                                  allowPrivateNetwork,
                                   models: [],
                                   enabled: true,
                                 },
