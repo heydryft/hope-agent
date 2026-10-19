@@ -185,6 +185,12 @@ Google 官方 HTTPS 端点的精确 ID 将 `minimal` 调整为 `low`、`xhigh/ma
 
 两个模板及大盘兜底估价补齐当前标准输入/输出价 0.75/3.75 美元每百万令牌。Google 此价格有效至 2026-12-31，2027-01-01 起为 1.5/7.5；到期前需重新核验并更新模板和估价表。OpenRouter 以其渠道当期报价为准。缓存、Batch/Flex/Priority 及用户账户的实际账单不由基础单价表达；本次仅离线契约验证，没有真实模型质量、延迟或费用实测。[Google 定价](https://ai.google.dev/gemini-api/docs/pricing)
 
+#### 2026-10-19 Gemini 4 Argon 稳定型号
+
+Google 于 2026-10-13 将 `gemini-4-argon` 标为 GA。其模型页给出统一 1,048,576 输入/输出上下文与同步 65,536 最大输出；超过 65,536 的 long decode 需 Interactions API 后台执行，Hope 当前适配器不走该协议。模板只声明文本/图片，因为这是已核验的 OpenAI Chat 兼容输入；不把原生音频、视频、PDF 或服务端工具计为 Hope 已接入。官方 OpenAI 兼容层列出此模型的 `reasoning_effort` 映射，并支持 Chat Completions、流式与函数调用；仅官方 Google HTTPS 主机、443 端口及精确模型 ID 应用 `minimal → low`、`xhigh/max → high` 映射，未设置或 `none` 不发送参数并保留 Google 默认 `medium`，因此不能表示为关闭思考。
+
+模板与成本估算同步标准付费档当前输入/输出价 $2/$10 每百万令牌，官方促销截止 2026-11-30，12-01 起为 $4/$20。它不支持 Free tier 或 Google AI Pro；缓存仅隐式，费用不在标量模板价格内。当前数据可用于同期估算，不代表账单；到期前须重新核价。[GA 更新](https://ai.google.dev/gemini-api/docs/changelog)、[模型限制](https://ai.google.dev/gemini-api/docs/models/gemini-4-argon)、[OpenAI 兼容](https://ai.google.dev/gemini-api/docs/openai)、[官方价格](https://ai.google.dev/gemini-api/docs/pricing)。
+
 #### Anthropic 工作区鉴权
 
 `AuthProfile.anthropic_workspace_id` 的线上字段为 `anthropicWorkspaceId`：缺失或 `null` 表示限定工作区旧密钥；`Some` 表示用户已选择显式绑定，空串和非法 ID 必须在保存或发送前拒绝。该字段只在设置页每把密钥的“多工作区密钥”入口编辑，不增加 `ha-settings` 的服务商读写类别。不能根据密钥内容猜测其权限范围。[官方鉴权规则](https://platform.claude.com/docs/en/manage-claude/authentication)

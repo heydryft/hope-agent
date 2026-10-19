@@ -38,6 +38,10 @@ MiniMax M3 uses the existing Anthropic compatible connection, accepts images, su
 
 New direct Google templates exclude Gemini 3.7 / 3.5 Flash, which redirect to newer models, and Gemini 2.5 models, which are restricted to users who previously used them. Choose stable Gemini 3.8 Flash or 3.6 Flash. Existing connections and other gateway candidates remain available.
 
+The Google template now offers the GA stable model `gemini-4-argon`. Hope uses it through Gemini's OpenAI Chat compatible endpoint and declares text/image input, a unified 1,048,576-token input/output context, a 65,536 synchronous output limit, function calling, and streaming. Official compatibility maps reasoning effort to `low / medium / high`; `minimal` maps to `low`, while `xhigh` and `max` map to `high`. An unset or explicitly disabled reasoning parameter is omitted, so Google applies its `medium` default; this does not turn off model reasoning. Hope does not call the Interactions API background path for long decode beyond 65,536 tokens, and does not declare audio, video, or PDF input support.
+
+Gemini 4 Argon Standard pricing is currently $2/$10 per million input/output tokens through November 30, 2026, and becomes $4/$20 on December 1. The model is unavailable on the Free tier and Google AI Pro plan. The template and dashboard store only the current base rate; check Google for cache discounts, other inference tiers, and actual billing. [Model limits](https://ai.google.dev/gemini-api/docs/models/gemini-4-argon), [OpenAI compatibility](https://ai.google.dev/gemini-api/docs/openai), [pricing](https://ai.google.dev/gemini-api/docs/pricing).
+
 **Where**: Settings → **Model Configuration** → **Providers** tab → click "**Add Provider**" in the top right.
 
 The first page of the add wizard offers five paths:

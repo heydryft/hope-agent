@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Gemini 4 Argon 模型**：在 Google 模板中加入 GA 稳定型号，并适配 OpenAI Chat 兼容端点的推理档位映射与当前官方价格；同步说明同步输出上限和计划可用性。 (#PR)
+
 ### Fixed
 
 - **MCP 结构化结果**：外部工具成功返回的数据与文字说明一并保留，避免仅有结构化数据时出现空结果，并保持 Hook 拒绝与停止指令可解析。 (#837)

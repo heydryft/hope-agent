@@ -38,6 +38,10 @@ MiniMax M3 使用原有 Anthropic 兼容连接，支持图片、百万上下文�
 
 Google 直连新建模板已移除弃用并转向新型号的 Gemini 3.7 / 3.5 Flash，以及仅限过去使用过的用户访问的 Gemini 2.5 系列。可选择稳定版 Gemini 3.8 Flash 或 3.6 Flash；既有连接和其他网关候选保留。
 
+Google 模板现提供 GA 稳定型号 `gemini-4-argon`。Hope 通过 Gemini 的 OpenAI Chat 兼容端点使用它，声明文本和图片输入、1,048,576 个统一输入/输出上下文令牌、同步输出上限 65,536，并支持函数调用与流式响应。推理档位按官方兼容规则映射为 `low / medium / high`；`minimal` 映射到 `low`，`xhigh` 和 `max` 映射到 `high`。未设置或显式关闭推理参数时会省略该字段，由 Google 默认使用 `medium`，这不会关闭模型思考。Hope 不调用 Interactions API 的后台长输出，因此不会使用超过 65,536 的 long decode，也不声明音频、视频或 PDF 输入能力。
+
+Gemini 4 Argon 标准付费价目前为每百万输入/输出令牌 $2/$10，至 2026-11-30；2026-12-01 起为 $4/$20。该模型不向 Free tier 或 Google AI Pro 计划开放。模板和大盘只记录当前基础价，缓存折扣、其他推理档位费用及实际账单需以 Google 账户为准。[型号与限制](https://ai.google.dev/gemini-api/docs/models/gemini-4-argon)、[OpenAI 兼容参数](https://ai.google.dev/gemini-api/docs/openai)、[价格](https://ai.google.dev/gemini-api/docs/pricing)。
+
 **入口**:设置 → **模型配置** → **服务商** 标签页 → 点右上角「**添加服务商**」。
 
 添加向导首页提供五条路径:
