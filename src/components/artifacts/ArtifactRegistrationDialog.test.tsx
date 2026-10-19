@@ -6,7 +6,7 @@ import { ArtifactLifecycle } from "./ArtifactLifecycle"
 import type { ArtifactRecord } from "@/lib/transport"
 
 const mocks = vi.hoisted(() => ({
-  current: { importArtifact: vi.fn() },
+  current: { importArtifact: vi.fn(), uploadFile: vi.fn(), discardFileUpload: vi.fn() },
   t: (key: string) => key,
 }))
 vi.mock("@/lib/transport-provider", () => ({
@@ -36,7 +36,11 @@ const artifact: ArtifactRecord = {
 
 beforeEach(() => {
   vi.useFakeTimers()
-  mocks.current = { importArtifact: vi.fn().mockResolvedValue(artifact) }
+  mocks.current = {
+    importArtifact: vi.fn().mockResolvedValue(artifact),
+    uploadFile: vi.fn().mockResolvedValue({ uploadId: "lease-local-file" }),
+    discardFileUpload: vi.fn().mockResolvedValue(undefined),
+  }
 })
 afterEach(() => {
   cleanup()
@@ -51,6 +55,8 @@ test.each(["/workspace/report.md", "C:\\workspace\\report.html", "\\\\server\\sh
     render(<ArtifactRegistrationDialog onImported={imported} onClose={close} />)
     expect(mocks.current.importArtifact).not.toHaveBeenCalled()
     expect(screen.getByRole("button", { name: "artifacts.registration.create" })).toBeDisabled()
+    fireEvent.click(screen.getByRole("radio", { name: "artifacts.registration.pathSource" }))
+    fireEvent.click(screen.getByRole("radio", { name: "artifacts.registration.pathSource" }))
     fireEvent.change(screen.getByRole("textbox", { name: "artifacts.registration.path" }), {
       target: { value: path },
     })
@@ -74,6 +80,7 @@ test.each(["/workspace/report.md", "C:\\workspace\\report.html", "\\\\server\\sh
 test("an update uses the selected ID and exact version without changing privacy or guessing by name", async () => {
   const before = structuredClone(artifact)
   render(<ArtifactRegistrationDialog artifact={artifact} onImported={vi.fn()} onClose={vi.fn()} />)
+  fireEvent.click(screen.getByRole("radio", { name: "artifacts.registration.pathSource" }))
   fireEvent.change(screen.getByRole("textbox"), { target: { value: "/workspace/same-title.md" } })
   await act(async () =>
     fireEvent.click(screen.getByRole("button", { name: "artifacts.registration.update" })),
@@ -89,6 +96,7 @@ test("an update uses the selected ID and exact version without changing privacy 
 test("relative paths and cancellation dispatch no import", () => {
   const close = vi.fn()
   render(<ArtifactRegistrationDialog onImported={vi.fn()} onClose={close} />)
+  fireEvent.click(screen.getByRole("radio", { name: "artifacts.registration.pathSource" }))
   fireEvent.change(screen.getByRole("textbox"), { target: { value: "relative/report.md" } })
   expect(screen.getByRole("button", { name: "artifacts.registration.create" })).toBeDisabled()
   fireEvent.click(screen.getByRole("button", { name: "common.cancel" }))
@@ -102,6 +110,7 @@ test("a conflict preserves the draft, shows failure for two seconds and never re
   )
   const imported = vi.fn()
   render(<ArtifactRegistrationDialog artifact={artifact} onImported={imported} onClose={vi.fn()} />)
+  fireEvent.click(screen.getByRole("radio", { name: "artifacts.registration.pathSource" }))
   fireEvent.change(screen.getByRole("textbox"), { target: { value: "/workspace/revised.md" } })
   await act(async () =>
     fireEvent.click(screen.getByRole("button", { name: "artifacts.registration.update" })),
@@ -125,6 +134,7 @@ test("a pending write cannot be dismissed or sent twice", async () => {
   )
   const close = vi.fn()
   render(<ArtifactRegistrationDialog onImported={vi.fn()} onClose={close} />)
+  fireEvent.click(screen.getByRole("radio", { name: "artifacts.registration.pathSource" }))
   fireEvent.change(screen.getByRole("textbox"), { target: { value: "/workspace/report.md" } })
   fireEvent.click(screen.getByRole("button", { name: "artifacts.registration.create" }))
   expect(screen.getByRole("button", { name: "common.cancel" })).toBeDisabled()
@@ -146,9 +156,10 @@ test("a host switch prevents an old-host result from updating the new gallery", 
   const imported = vi.fn(),
     close = vi.fn()
   const view = render(<ArtifactRegistrationDialog onImported={imported} onClose={close} />)
+  fireEvent.click(screen.getByRole("radio", { name: "artifacts.registration.pathSource" }))
   fireEvent.change(screen.getByRole("textbox"), { target: { value: "/workspace/report.md" } })
   fireEvent.click(screen.getByRole("button", { name: "artifacts.registration.create" }))
-  mocks.current = { importArtifact: vi.fn() }
+  mocks.current = { importArtifact: vi.fn(), uploadFile: vi.fn(), discardFileUpload: vi.fn() }
   view.rerender(<ArtifactRegistrationDialog onImported={imported} onClose={close} />)
   await act(async () => finish(artifact))
   expect(screen.getByRole("alert")).toHaveTextContent("artifacts.registration.hostChanged")
@@ -164,3 +175,91 @@ test("lifecycle labels distinguish an initial snapshot from later versions indep
   expect(screen.getByText("artifacts.registration.updatedVersion")).toBeTruthy()
   expect(screen.queryByText("artifacts.registration.firstVersion")).toBeNull()
 })
+
+test("default owner-selected file uses an upload lease and never sends its local path", async () => {
+  const file = new File(["# Delivered report"], "report.md", { type: "text/markdown" })
+  const imported = vi.fn()
+  render(<ArtifactRegistrationDialog artifact={artifact} onImported={imported} onClose={vi.fn()} />)
+  expect(screen.queryByRole("textbox")).toBeNull()
+  fireEvent.change(screen.getByLabelText("artifacts.registration.file"), {
+    target: { files: [file] },
+  })
+  expect(mocks.current.uploadFile).not.toHaveBeenCalled()
+  await act(async () =>
+    fireEvent.click(screen.getByRole("button", { name: "artifacts.registration.update" })),
+  )
+  expect(mocks.current.uploadFile).toHaveBeenCalledExactlyOnceWith(
+    file,
+    "artifact_source",
+    undefined,
+    expect.any(AbortSignal),
+  )
+  expect(mocks.current.importArtifact).toHaveBeenCalledExactlyOnceWith({
+    uploadId: "lease-local-file",
+    artifactId: artifact.id,
+    expectedVersion: 5,
+  })
+  expect(imported).toHaveBeenCalledExactlyOnceWith(artifact)
+  expect(mocks.current.discardFileUpload).not.toHaveBeenCalled()
+})
+
+test("unsupported selected files dispatch neither upload nor import", () => {
+  render(<ArtifactRegistrationDialog onImported={vi.fn()} onClose={vi.fn()} />)
+  fireEvent.change(screen.getByLabelText("artifacts.registration.file"), {
+    target: { files: [new File(["secret"], "private.txt")] },
+  })
+  expect(screen.getByRole("button", { name: "artifacts.registration.create" })).toBeDisabled()
+  expect(mocks.current.uploadFile).not.toHaveBeenCalled()
+  expect(mocks.current.importArtifact).not.toHaveBeenCalled()
+})
+
+test("failed registration discards only its original-host unclaimed lease and retains the file without retry", async () => {
+  mocks.current.importArtifact.mockRejectedValue(new Error("private upload failure"))
+  const file = new File(["# Report"], "report.md")
+  render(<ArtifactRegistrationDialog onImported={vi.fn()} onClose={vi.fn()} />)
+  fireEvent.change(screen.getByLabelText("artifacts.registration.file"), {
+    target: { files: [file] },
+  })
+  await act(async () =>
+    fireEvent.click(screen.getByRole("button", { name: "artifacts.registration.create" })),
+  )
+  expect(mocks.current.discardFileUpload).toHaveBeenCalledExactlyOnceWith("lease-local-file")
+  expect(screen.getByRole("alert")).toHaveTextContent("artifacts.registration.failed")
+  expect(screen.queryByText(/private upload failure/)).toBeNull()
+  act(() => vi.advanceTimersByTime(2000))
+  expect(mocks.current.uploadFile).toHaveBeenCalledOnce()
+  expect(screen.getByRole("button", { name: "artifacts.registration.create" })).not.toBeDisabled()
+})
+
+test.each(["host", "unmount"])(
+  "a late upload after %s change is discarded on the original host without import",
+  async (change) => {
+    let finish!: (lease: { uploadId: string }) => void
+    const old = mocks.current
+    old.uploadFile.mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve
+      }),
+    )
+    const imported = vi.fn(),
+      close = vi.fn()
+    const view = render(<ArtifactRegistrationDialog onImported={imported} onClose={close} />)
+    fireEvent.change(screen.getByLabelText("artifacts.registration.file"), {
+      target: { files: [new File(["# Report"], "report.md")] },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "artifacts.registration.create" }))
+    const signal = old.uploadFile.mock.calls[0][3] as AbortSignal
+    if (change === "unmount") {
+      view.unmount()
+      expect(signal.aborted).toBe(true)
+    } else {
+      mocks.current = { importArtifact: vi.fn(), uploadFile: vi.fn(), discardFileUpload: vi.fn() }
+      view.rerender(<ArtifactRegistrationDialog onImported={imported} onClose={close} />)
+    }
+    await act(async () => finish({ uploadId: "late-original-lease" }))
+    expect(old.discardFileUpload).toHaveBeenCalledExactlyOnceWith("late-original-lease")
+    expect(old.importArtifact).not.toHaveBeenCalled()
+    expect(mocks.current.importArtifact).not.toHaveBeenCalled()
+    expect(imported).not.toHaveBeenCalled()
+  },
+)
