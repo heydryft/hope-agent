@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { getTransport } from "@/lib/transport-provider"
 import { Button } from "@/components/ui/button"
@@ -260,11 +260,23 @@ export default function AddAccountDialog({
     }
   }, [channelId, label, wechatConnection])
 
+  const previousSecurityChannel = useRef("")
   useEffect(() => {
-    if (channelId === "wecom") {
-      setDmPolicy("allowlist"); setGroupPolicy("allowlist"); setUserAllowlist([]); setGroups({}); setChannels({}); setWeComGroupIds("")
+    const previous = previousSecurityChannel.current
+    previousSecurityChannel.current = channelId
+    if (channelId === "wecom" || previous === "wecom") {
+      // A WeCom draft must neither grant access on reopen nor leave its
+      // deny-by-default policies attached to a different channel's new draft.
+      const policy = channelId === "wecom" ? "allowlist" : "open"
+      setDmPolicy(policy)
+      setGroupPolicy(policy)
+      setUserAllowlist([])
+      setAllowlistInput("")
+      setGroups({})
+      setChannels({})
+      setWeComGroupIds("")
     }
-  }, [channelId])
+  }, [channelId, open])
 
   const handleSave = async () => {
     if (channelId === "wecom" && getTransport() !== formTransport) { setSaveError(t("channels.wecomHostChanged")); return }
@@ -376,7 +388,7 @@ export default function AddAccountDialog({
           <>
             <DialogHeader>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleBack}>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleBack} aria-label={t("common.back")}>
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <div className="flex items-center gap-2">

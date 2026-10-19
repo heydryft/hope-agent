@@ -1,5 +1,5 @@
-//! IM 渠道特征 crate（阶段 5 第五刀，自 ha-core 迁出）：12 个聊天平台插件
-//! （telegram / wechat / slack / feishu / discord / qqbot / irc / signal /
+//! IM 渠道特征 crate（阶段 5 第五刀，自 ha-core 迁出）：13 个聊天平台插件
+//! （telegram / wechat / wecom / slack / feishu / discord / qqbot / irc / signal /
 //! imessage / whatsapp / googlechat / line）、入站 worker 分发与媒体管道、
 //! 账号生命周期与启动重试 watchdog、主对话的 IM 实时镜像，以及飞书业务工具
 //! adapter。
@@ -108,7 +108,7 @@ fn register_hooks() {
         channel::accounts::set_account_auto_transcribe_voice(id, on, source)
     }
 
-    /// 12 个内置插件。顺序与迁移前 `app_init` 里那段逐行一致。
+    /// 13 个内置插件。保留原有注册顺序，并加入企业微信文本首版。
     fn install_plugins(registry: &mut ha_core::channel::ChannelRegistry) {
         registry.register_plugin(Arc::new(channel::telegram::TelegramPlugin::new()));
         registry.register_plugin(Arc::new(channel::wechat::WeChatPlugin::new()));
