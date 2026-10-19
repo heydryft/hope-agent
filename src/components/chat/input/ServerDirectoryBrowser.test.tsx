@@ -6,17 +6,14 @@ import { TRANSPORT_EVENT_RESYNC_REQUIRED, type DirEntry } from "@/lib/transport"
 import ServerDirectoryBrowser from "./ServerDirectoryBrowser"
 
 const transportMock = vi.hoisted(() => ({
-  listServerDirectory:
-    vi.fn<
-      (
-        path?: string,
-      ) => Promise<{
-        path: string
-        parent?: string | null
-        entries: DirEntry[]
-        truncated: boolean
-      }>
-    >(),
+  listServerDirectory: vi.fn<
+    (path?: string, directoriesOnly?: boolean) => Promise<{
+      path: string
+      parent?: string | null
+      entries: DirEntry[]
+      truncated: boolean
+    }>
+  >(),
   createDirectory:
     vi.fn<(path: string) => Promise<{ path: string; entries: never[]; truncated: boolean }>>(),
   call: vi.fn(),
@@ -112,7 +109,9 @@ describe("ServerDirectoryBrowser", () => {
       expect(onSelect).toHaveBeenCalledWith("/home/hope/project")
       fireEvent.click(screen.getByRole("button", { name: "chat.workingDir.parent" }))
       await screen.findByRole("button", { name: "project" })
-      expect(transportMock.listServerDirectory).toHaveBeenLastCalledWith("/home/hope")
+      expect(transportMock.listServerDirectory).toHaveBeenLastCalledWith(
+        ...(directoriesOnly ? ["/home/hope", true] : ["/home/hope"]),
+      )
     },
   )
 

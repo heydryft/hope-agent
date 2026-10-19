@@ -65,7 +65,9 @@ export default function ServerDirectoryBrowser({
       setCreateError(null)
       setCreateErrorDetail(null)
       try {
-        const result = await transport.listServerDirectory(path)
+        const result = directoriesOnly
+          ? await transport.listServerDirectory(path, true)
+          : await transport.listServerDirectory(path)
         setListing(result)
         setManualPath(result.path)
         return result
@@ -78,7 +80,7 @@ export default function ServerDirectoryBrowser({
         setLoading(false)
       }
     },
-    [transport],
+    [transport, directoriesOnly],
   )
 
   useEffect(() => {
