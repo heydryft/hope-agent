@@ -22,7 +22,7 @@
 //!   `CHANNEL_REGISTRY` 全局、`AppState` 字段与壳层的 **registry** 调用点
 //!   （src-tauri 9 处 / ha-server 1 处 / ha-cron 1 处）一处未改**——
 //!   非 registry 的 API（`accounts` / `wechat::login` / `attach_sync`）壳层
-//!   照常改成 `ha_channel::`——12 个插件实现由本 crate 在 [`wire()`]
+//!   照常改成 `ha_channel::`——13 个插件实现由本 crate 在 [`wire()`]
 //!   里装进去。
 //! - **`types` / `config`**——`AppConfig` 可达的 wire 类型，定义处本就在
 //!   ha-config-schema。
@@ -112,6 +112,7 @@ fn register_hooks() {
     fn install_plugins(registry: &mut ha_core::channel::ChannelRegistry) {
         registry.register_plugin(Arc::new(channel::telegram::TelegramPlugin::new()));
         registry.register_plugin(Arc::new(channel::wechat::WeChatPlugin::new()));
+        registry.register_plugin(Arc::new(channel::wecom::WeComPlugin::new()));
         registry.register_plugin(Arc::new(channel::slack::SlackPlugin::new()));
         registry.register_plugin(Arc::new(channel::feishu::FeishuPlugin::new()));
         registry.register_plugin(Arc::new(channel::discord::DiscordPlugin::new()));
