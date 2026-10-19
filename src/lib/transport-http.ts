@@ -3415,9 +3415,10 @@ export class HttpTransport implements Transport {
     )
   }
 
-  async listServerDirectory(path?: string): Promise<DirListing> {
+  async listServerDirectory(path?: string, directoriesOnly?: boolean): Promise<DirListing> {
     const url = new URL(`${this.baseUrl}/api/filesystem/list-dir`)
     if (path) url.searchParams.set("path", path)
+    if (directoriesOnly) url.searchParams.set("directoriesOnly", "true")
     const auth = this.authSnapshot()
     const headers: Record<string, string> = {}
     if (auth.apiKey) headers["Authorization"] = `Bearer ${auth.apiKey}`
