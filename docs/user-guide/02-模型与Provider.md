@@ -147,7 +147,7 @@ hope-agent auth codex logout         # 登出(会删除 Codex 服务商与本地
 
 - 登录后使用的具体模型可在设置里切换,默认选择所有账号档位都可用的那一档。
 - 内建 Codex 目录已包含 `gpt-6-astra`、`gpt-6.1-sol`、`gpt-6-sol`、`gpt-6-luna`；升级时补齐缺失条目，保留已选模型、自定义参数与禁用状态。可用性仍由 ChatGPT 套餐、工作区开关及官方上线范围决定。
-- Codex 的 GPT-6 上下文预设为官方内建目录的 **272K**，与 OpenAI API 的 **1.05M** 分开；沿用 **16K 输出预留**，不是服务端输出硬上限。GPT-6 推理档位为 `low` 至 `max`；`minimal` 和“关闭”按接口映射为 `low`，“关闭”仍隐藏思考展示；未设置强度时保留模型默认。`Ultra` 是 Codex 的任务委派能力，Hope 不把它当成推理请求参数发送。
+- Codex OAuth 的 `gpt-6.1-sol` 上下文预设为 ChatGPT Work/Codex 官方说明的 **500K**；其它 GPT-6 OAuth 预设沿用官方 Codex 内建目录的 **272K**，OpenAI API 目录仍为 **1.05M**。上游 Codex 清单另列 872K 最大窗口，但 Hope 不把它当默认预算。沿用 **16K 输出预留**，不是服务端输出硬上限。GPT-6 推理档位为 `low` 至 `max`；`minimal` 和“关闭”按接口映射为 `low`，“关闭”仍隐藏思考展示；未设置强度时保留模型默认。`Ultra` 是 Codex 的任务委派能力，Hope 不把它当成推理请求参数发送。套餐、工作区设置和上线资格仍由服务端裁决。
 - 新目录不再提供已退役的 GPT-5.4、GPT-5.3-Codex-Spark，以及 2026-10-14 在 Codex 退役的 GPT-5.5；既有配置保留，GPT-5.5 的 API 候选不受这次 Codex 退役影响。
 - Codex 凭据只存在本机(`~/.hope-agent/credentials/auth.json`),绝不写入日志。
 - Codex 登录与 [11 · MCP 接入外部工具](11-连接与扩展.md#111-mcp接入外部工具) 的账号登录是两套完全独立的机制,互不影响。
