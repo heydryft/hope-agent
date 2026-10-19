@@ -11813,7 +11813,19 @@
     "exportReviewPassed": "Dışa aktarma incelemesi geçildi",
     "exportReviewBlocked": "Dışa aktarma incelemesinde hâlâ engelleyiciler var",
     "guardStatus": "Koruma",
-    "defaultName": "Çıktı"
+    "defaultName": "Çıktı",
+    "registration": {
+      "create": "Dosyayı yeni ürün olarak kaydet",
+      "update": "Dosyadan güncelle",
+      "description": "Agent bilgisayarındaki .html, .htm, .md veya analiz artifact.json dosyasını yönetilen bir anlık görüntüye kopyalar. Kaynak korunur. Yeni kayıtlar ada göre üzerine yazmaz; güncellemeler seçili kimliği ve sürüm geçmişini korur.",
+      "path": "Agent bilgisayarındaki dosyanın mutlak yolu",
+      "failed": "Sonuç doğrulanamadı. Tekrar göndermeden önce kitaplığı yenileyin; kayıt yoksa biçimi, yol izinlerini ve mevcut sürümü kontrol edin.",
+      "hostChanged": "Agent bilgisayarı değişti. Bu pencereyi kapatıp sonucu ilk bilgisayarda kontrol edin.",
+      "firstVersion": "İlk sürüm",
+      "updatedVersion": "Güncellendi",
+      "createdAt": "Oluşturuldu",
+      "updatedAt": "Güncellendi"
+    }
   },
   "backgroundJobs": {
     "panelTitle": "Arka Plan Görevleri",

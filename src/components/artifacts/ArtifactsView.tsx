@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   Trash2,
   X,
+  Plus,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -44,6 +45,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import ArtifactViewer, { type ArtifactTextSelection } from "./ArtifactViewer"
+import { ArtifactRegistrationDialog } from "./ArtifactRegistrationDialog"
+import { ArtifactLifecycle } from "./ArtifactLifecycle"
 import { useFileResource } from "@/components/chat/files/useFileResource"
 import type { FileTarget } from "@/components/chat/files/types"
 import { FileContextMenu } from "@/components/chat/files/FileActionMenu"
@@ -241,7 +244,7 @@ function ArtifactListRow({
             </>
           )}
           <span>·</span>
-          <span>{new Date(artifact.updatedAt).toLocaleDateString()}</span>
+          <ArtifactLifecycle artifact={artifact} />
         </div>
       </button>
     </FileContextMenu>
@@ -269,6 +272,8 @@ export default function ArtifactsView({ isViewVisible, onAddQuoteToChat }: Artif
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [registration, setRegistration] = useState<{ artifact?: ArtifactRecord } | null>(null)
+  const listGeneration = useRef(0)
   const [exportFormat, setExportFormat] = useState<ArtifactExportFormat>("html")
   const selectedTarget = useMemo<Extract<FileTarget, { kind: "artifact" }> | null>(
     () =>
@@ -404,6 +409,7 @@ export default function ArtifactsView({ isViewVisible, onAddQuoteToChat }: Artif
   })
 
   const loadList = useCallback(async () => {
+    const generation = ++listGeneration.current
     setLoading(true)
     try {
       const rows = await getTransport().listArtifacts({
@@ -412,19 +418,21 @@ export default function ArtifactsView({ isViewVisible, onAddQuoteToChat }: Artif
         kind: kind === "all" ? undefined : kind,
         lifecycleState: state === "all" ? undefined : state,
       })
+      if (generation !== listGeneration.current) return
       setArtifacts(rows)
       const activeSelectedId = selectedIdRef.current
       if (activeSelectedId && !rows.some((artifact) => artifact.id === activeSelectedId)) {
         clearSelectedArtifact()
       }
     } catch (error) {
+      if (generation !== listGeneration.current) return
       toast.error(
         error instanceof Error
           ? error.message
           : t("artifacts.loadFailed", "Failed to load Artifacts"),
       )
     } finally {
-      setLoading(false)
+      if (generation === listGeneration.current) setLoading(false)
     }
   }, [clearSelectedArtifact, kind, offset, state, t])
 
@@ -639,7 +647,32 @@ export default function ArtifactsView({ isViewVisible, onAddQuoteToChat }: Artif
         >
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
         </Button>
+        <Button variant="secondary" size="sm" onClick={() => setRegistration({})}>
+          <Plus className="mr-1.5 h-3.5 w-3.5" />
+          {t("artifacts.registration.create")}
+        </Button>
       </header>
+
+      {registration && (
+        <ArtifactRegistrationDialog
+          artifact={registration.artifact}
+          onClose={() => setRegistration(null)}
+          onImported={(artifact) => {
+            listGeneration.current++
+            setLoading(false)
+            setKind("all")
+            setState("all")
+            setQuery("")
+            setOffset(0)
+            setArtifacts((current) =>
+              [artifact, ...current.filter((row) => row.id !== artifact.id)].slice(0, PAGE_SIZE),
+            )
+            selectArtifact(artifact.id)
+            setSelected(artifact)
+            setRefreshKey((value) => value + 1)
+          }}
+        />
+      )}
 
       <div className="flex min-h-0 flex-1">
         <div
@@ -818,7 +851,16 @@ export default function ArtifactsView({ isViewVisible, onAddQuoteToChat }: Artif
                   {enumLabel(selected.kind)} · v{selected.currentVersion} · {selected.sourceCount}{" "}
                   {t("artifacts.sources", "sources")}
                 </p>
+                <ArtifactLifecycle artifact={selected} />
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={busy !== null}
+                onClick={() => setRegistration({ artifact: selected })}
+              >
+                {t("artifacts.registration.update")}
+              </Button>
               <Button
                 variant="outline"
                 size="sm"

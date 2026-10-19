@@ -11813,7 +11813,19 @@
     "exportReviewPassed": "导出复核已通过",
     "exportReviewBlocked": "导出复核仍有阻塞项",
     "guardStatus": "门禁",
-    "defaultName": "产物"
+    "defaultName": "产物",
+    "registration": {
+      "create": "登记文件为新产物",
+      "update": "从文件更新产物",
+      "description": "将 Agent 所在电脑上的 .html、.htm、.md 或分析型 artifact.json 复制为受管快照，原文件保留。新建不会按同名覆盖；更新保留所选产物的身份与历史版本。",
+      "path": "Agent 所在电脑上的文件绝对路径",
+      "failed": "无法确认登记结果。请先刷新产物库核对；若未成功，再检查文件格式、路径权限或当前版本后提交。",
+      "hostChanged": "Agent 所在电脑已切换。请关闭此窗口，并切回原电脑核对登记结果。",
+      "firstVersion": "初版",
+      "updatedVersion": "已迭代",
+      "createdAt": "创建于",
+      "updatedAt": "更新于"
+    }
   },
   "backgroundJobs": {
     "panelTitle": "后台任务",

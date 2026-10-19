@@ -200,6 +200,10 @@ stateDiagram-v2
 
 模型工具里的 `file_path` 始终解析为 runtime workspace 路径。owner 导入则同时接受 runtime-host 上的 `filePath`，或客户端经通用分块上传协议得到的 `uploadId`（`artifact_source` lease），两者严格互斥；start、complete 与导入 claim 都会重读 `maxArtifactImportMb`。成功导入消费该 lease，失败则保留至一小时后过期以便重试。
 
+产物库提供 owner 显式登记入口：填写 Agent 所在电脑上的绝对文件路径，调用既有 `importArtifact` 复制并登记为新的受管快照；同名文件不会自动替换旧产物。选中已有产物后可从文件更新，携带该产物 ID 与当前已展示的 `expectedVersion`，保留身份、隐私和不可变历史；冲突或无法确认结果时保留输入、不自动重试，先刷新核对再提交。保存中禁止重复提交或关闭，成功反馈显示两秒后关闭；切换运行主机后旧响应不得更新新主机视图。
+
+目录中的未声明脚本文件仍不会被扫描或自动晋升。`artifact` 模型工具继续作为 Agent 显式交付入口；普通“生成/修改的文件”与正式产物库的身份不混用。产物列表和详情根据持久版本号显示“初版”或“已迭代”，分别标注创建或更新时间；这表示版本生命周期，不宣称是当前轮次生成。登记成功会使较早的列表请求失效，防止旧列表把新产物移出当前选择。
+
 模型工具在 incognito 会话完全不可用（Artifact 当前是 durable 能力）。删除、导出与脱敏确认不暴露给模型。
 
 ## AnalysisArtifactV1

@@ -11813,7 +11813,19 @@
     "exportReviewPassed": "Revisão de exportação aprovada",
     "exportReviewBlocked": "Revisão de exportação ainda tem bloqueadores",
     "guardStatus": "Guarda",
-    "defaultName": "Artefato"
+    "defaultName": "Artefato",
+    "registration": {
+      "create": "Registrar arquivo como novo artefato",
+      "update": "Atualizar a partir de arquivo",
+      "description": "Copia um .html, .htm, .md ou artifact.json de análise do computador do Agent para uma cópia gerenciada. O original é preservado. Novos registros não sobrescrevem pelo nome; atualizações mantêm a identidade e o histórico selecionados.",
+      "path": "Caminho absoluto do arquivo no computador do Agent",
+      "failed": "Não foi possível confirmar o resultado. Atualize a biblioteca antes de reenviar; se não foi registrado, confira formato, permissões e versão atual.",
+      "hostChanged": "O computador do Agent mudou. Feche esta janela e confira o resultado no computador original.",
+      "firstVersion": "Primeira versão",
+      "updatedVersion": "Atualizado",
+      "createdAt": "Criado",
+      "updatedAt": "Atualizado"
+    }
   },
   "backgroundJobs": {
     "panelTitle": "Tarefas em segundo plano",
