@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **产物显式交付**：可从文件登记新产物或更新选中的版本，保留源文件与历史，并用初版/已迭代及日期区分生命周期。 (#845)
+
 ### Fixed
 
 - **Linux 目录选择**：会话工作目录和项目文件夹入口改用仅显示文件夹的应用内浏览器，可粘贴路径定位；其他桌面平台保留系统选择器。 (#843)
