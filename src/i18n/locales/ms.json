@@ -373,7 +373,7 @@
     "pluginDesc_wecom": "Teks bot AI terus untuk mesej peribadi dan kumpulan",
     "wecomBotId": "Bot ID",
     "wecomSecret": "Bot Secret",
-    "wecomSetupHint": "Dapatkan Bot ID dan Secret daripada WeCom. Gunakan satu klien bagi setiap bot: pengesahan melanggan seketika dan menggunakan semula sambungan setempat yang sihat.",
+    "wecomSetupHint": "Dapatkan Bot ID dan Secret daripada WeCom. Gunakan satu klien bagi setiap bot. Pengesahan melanggan sebentar dan menggunakan semula sambungan setempat yang sihat dengan kelayakan sama. Hentikan akaun aktif sebelum mengesahkan Secret baharu bagi bot yang sama.",
     "wecomHostChanged": "Hos telah berubah. Tutup dan buka semula borang. Sahkan operasi tertunda pada hos asal sebelum mencuba lagi.",
     "wecomValidated": "Pengesahan disahkan",
     "wecomValidationFailed": "Pengesahan ditolak atau sambungan tidak tersedia. Semak kelayakan dan rangkaian.",

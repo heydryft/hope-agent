@@ -490,6 +490,7 @@ async fn wecom_validation_reuses_cached_health_without_opening_another_connectio
     plugin.accounts.lock().unwrap().insert(
         "account-a".into(),
         Running {
+            bot_id: credentials.bot_id().to_owned(),
             fingerprint: credentials.fingerprint(),
             commands: tx,
             health: health.clone(),
@@ -637,4 +638,61 @@ async fn wecom_cancelled_queued_reply_does_not_mutate_or_consume_its_anchor() {
     assert!(receipt.await.unwrap().is_ok());
     cancel.cancel();
     assert_eq!(task.await.unwrap(), End::Cancelled);
+}
+
+#[tokio::test]
+async fn wecom_rotated_secret_validation_cannot_replace_a_running_bot() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    let plugin = WeComPlugin::new();
+    let credentials = Credentials::parse(&account().credentials).unwrap();
+    let (tx, _rx) = mpsc::channel(1);
+    let health = Arc::new(Mutex::new(ChannelHealth {
+        probe_ok: Some(true),
+        ..Default::default()
+    }));
+    let cancel = CancellationToken::new();
+    let worker_cancel = cancel.clone();
+    plugin.accounts.lock().unwrap().insert(
+        "account-a".into(),
+        Running {
+            bot_id: credentials.bot_id().to_owned(),
+            fingerprint: credentials.fingerprint(),
+            commands: tx,
+            health: health.clone(),
+            cancel: cancel.clone(),
+            task: tokio::spawn(async move { worker_cancel.cancelled().await }),
+        },
+    );
+    let calls = AtomicUsize::new(0);
+    let rotated = Credentials::parse(
+        &json!({"botId":credentials.bot_id(),"secret":"synthetic-rotated-secret"}),
+    )
+    .unwrap();
+    assert_ne!(rotated.fingerprint(), credentials.fingerprint());
+    let error = plugin
+        .validate_with(&rotated, || {
+            calls.fetch_add(1, Ordering::SeqCst);
+            async { Err(ConnectError::Network) }
+        })
+        .await
+        .unwrap_err();
+    assert!(error.to_string().contains("Stop this WeCom bot"));
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
+    assert_eq!(health.lock().unwrap().probe_ok, Some(true));
+    assert!(!cancel.is_cancelled());
+    // A different Bot ID must not inherit this account's cached validation.
+    let other = Credentials::parse(
+        &json!({"botId":"different-synthetic-bot","secret":"synthetic-other-secret"}),
+    )
+    .unwrap();
+    assert!(plugin
+        .validate_with(&other, || {
+            calls.fetch_add(1, Ordering::SeqCst);
+            async { Err(ConnectError::Network) }
+        })
+        .await
+        .is_err());
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+    assert!(!cancel.is_cancelled());
+    plugin.stop_account("account-a").await.unwrap();
 }

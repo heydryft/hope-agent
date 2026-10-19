@@ -43,6 +43,10 @@ impl Credentials {
             _ => Err(anyhow!("WeCom requires a valid Bot ID and Secret")),
         }
     }
+    pub fn bot_id(&self) -> &str {
+        &self.bot_id
+    }
+
     pub fn fingerprint(&self) -> [u8; 32] {
         let mut hash = Sha256::new();
         hash.update(self.bot_id.len().to_be_bytes());

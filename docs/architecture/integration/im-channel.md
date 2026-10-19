@@ -951,7 +951,7 @@ ask_user / approval 的**按钮卡片**也走 schema 2.0，但**不**走 cardkit
 
 入口为 `wecom/{mod,connection}.rs`；协议依据企业微信团队 [SDK 固定提交](https://github.com/WecomTeam/aibot-node-sdk/tree/80615b987ef69c6028ad764924609247c0725955) 的消息类型与 `src/ws.ts`，没有安装或执行该 SDK。生产只连 `wss://openws.work.weixin.qq.com`：HTTPS SSRF 检查、再次校验并固定 TCP 目标地址、原主机名 TLS 验证；无用户可写端点或重定向。
 
-- `aibot_subscribe` 的精确 `req_id` + 整数 `errcode=0` 后才启动 worker；鉴权失败以规范化 Bot ID/Secret 的内存指纹锁住自动重试，显式校验更正凭据后才能恢复。已有同凭据健康连接的校验复用缓存，不再建立第二条连接；健康轮询也不新建连接。网络失败复用 1/2/5/10/30/60 秒有界退避，认证成功才重置；`disconnected_event` 停止竞争其它客户端并等待人工重启。
+- `aibot_subscribe` 的精确 `req_id` + 整数 `errcode=0` 后才启动 worker；鉴权失败以规范化 Bot ID/Secret 的内存指纹锁住自动重试，显式校验更正凭据后才能恢复。按 Bot ID 识别本机运行连接；同凭据健康连接的校验复用缓存。同一 Bot 存在不同凭据的运行账户时拒绝校验，要求先停止该 Bot 的本机账户，避免未保存的 Secret 草稿建立第二条订阅并顶掉旧连接；健康轮询也不新建连接。网络失败复用 1/2/5/10/30/60 秒有界退避，认证成功才重置；`disconnected_event` 停止竞争其它客户端并等待人工重启。
 - 心跳命令是 `ping`，每 30 秒一次，精确回执最多等待 5 秒。连接、TLS 与鉴权合计最多 15 秒。帧/消息上限 64 KiB，发送队列 16、锚点 512、跨重连消息/请求去重各 4096 项；源消息锚点最多保留 10 分钟，容量淘汰或重连后不可复用。队列满不等待模型，健康页保留告警。
 - 入站仅接收与 Bot ID 一致的 `text`；单聊地址 `single:<userid>`，群聊 `group:<chatid>`。不复制 `response_url`、quote、媒体/AES 字段或原始 frame，`MsgContext.raw=null`。沿通用 `TurnKernel`、准入、计量及审批处理；allowlist 在排入 dispatcher 前和通用 dispatcher 再次检查。空 allowlist 不放行；未知聊天类型、未实现 pairing、默认/显式 requireMention 均保持关闭。新建群条目仅在 owner 明确填写 ID 时设 `requireMention=false`，编辑已有条目保留原策略。SDK 未提供已核验的提及字段，绝不伪造 `was_mentioned`。拒绝日志每账号最多 30 秒一条，只含脱敏身份 ID，不记录正文或凭据。
 - 首版强制 `final`，原生能力只声明最终文本。回复以本账号 + 聊天 + 原始 message ID + 当前连接内锚点匹配 SDK 原始 callback `req_id`；一个锚点只发一个 `finish=true` 的 stream，UTF-8 正文不超过 20480 字节。写入前校验全部内容；只有精确 ACK 为零才返回成功。超时、断线、取消或不可读回执均为 `Ambiguous` 并消费锚点，不自动切到其它发送路径或重发；缺少/过期锚点拒绝，不能使用最近聊天回调代替。媒体、卡片、按钮、typing 和原生预览不声明支持。

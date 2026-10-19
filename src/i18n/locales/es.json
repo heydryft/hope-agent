@@ -373,7 +373,7 @@
     "pluginDesc_wecom": "Texto directo del bot de IA en chats privados y grupos",
     "wecomBotId": "Bot ID",
     "wecomSecret": "Bot Secret",
-    "wecomSetupHint": "Obtén Bot ID y Secret en WeCom. Usa un cliente por bot: la validación se suscribe brevemente y reutiliza una conexión local sana.",
+    "wecomSetupHint": "Obtén Bot ID y Secret de WeCom. Usa un cliente por bot. La validación se suscribe brevemente y reutiliza una conexión local sana con las mismas credenciales. Detén la cuenta activa antes de validar otro Secret del mismo bot.",
     "wecomHostChanged": "El servidor cambió. Cierra y vuelve a abrir el formulario. Comprueba cualquier operación pendiente en el servidor original antes de reintentar.",
     "wecomValidated": "Autenticación confirmada",
     "wecomValidationFailed": "Autenticación rechazada o conexión no disponible. Revisa las credenciales y la red.",

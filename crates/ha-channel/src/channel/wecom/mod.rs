@@ -30,6 +30,7 @@ pub struct WeComPlugin {
 }
 
 struct Running {
+    bot_id: String,
     fingerprint: [u8; 32],
     commands: mpsc::Sender<Outbound>,
     health: Arc<Mutex<ChannelHealth>>,
@@ -163,10 +164,21 @@ impl WeComPlugin {
         let fingerprint = credentials.fingerprint();
         let cached = {
             let accounts = self.accounts.lock().expect("WeCom accounts");
-            accounts
+            let mut found = false;
+            let mut healthy = false;
+            for runtime in accounts
                 .values()
-                .find(|runtime| runtime.fingerprint == fingerprint)
-                .map(|runtime| runtime.health.lock().expect("WeCom health").probe_ok == Some(true))
+                .filter(|runtime| runtime.bot_id == credentials.bot_id())
+            {
+                // WeCom replaces a bot's previous client when another socket
+                // subscribes. A draft Secret must not disconnect a running bot.
+                if runtime.fingerprint != fingerprint {
+                    return Err(anyhow!("Stop this WeCom bot's running account before validating changed credentials"));
+                }
+                found = true;
+                healthy |= runtime.health.lock().expect("WeCom health").probe_ok == Some(true);
+            }
+            found.then_some(healthy)
         };
         if let Some(ready) = cached {
             return if ready {
@@ -240,6 +252,7 @@ impl ChannelPlugin for WeComPlugin {
         let _guard = self.lifecycle.lock().await;
         let credentials = Credentials::parse(&account.credentials)?;
         let fingerprint = credentials.fingerprint();
+        let bot_id = credentials.bot_id().to_owned();
         if self
             .accounts
             .lock()
@@ -301,6 +314,7 @@ impl ChannelPlugin for WeComPlugin {
         self.accounts.lock().expect("WeCom accounts").insert(
             account.id.clone(),
             Running {
+                bot_id,
                 fingerprint,
                 commands,
                 health,

@@ -373,7 +373,7 @@
     "pluginDesc_wecom": "AI botu için doğrudan özel ve grup metinleri",
     "wecomBotId": "Bot ID",
     "wecomSecret": "Bot Secret",
-    "wecomSetupHint": "Bot ID ve Secret değerlerini WeCom üzerinden alın. Bot başına tek istemci kullanın: doğrulama kısa süre abone olur, sağlıklı yerel bağlantı yeniden kullanılır.",
+    "wecomSetupHint": "Bot ID ve Secret bilgilerini WeCom’dan alın. Her bot için tek istemci kullanın. Doğrulama kısa süre abone olur; aynı kimlik bilgileriyle sağlıklı yerel bağlantı yeniden kullanılır. Aynı botun değiştirilmiş Secret değerini doğrulamadan önce çalışan hesabı durdurun.",
     "wecomHostChanged": "Çalışma sunucusu değişti. Formu kapatıp yeniden açın. Yeniden denemeden önce bekleyen işlemi eski sunucuda doğrulayın.",
     "wecomValidated": "Kimlik doğrulandı",
     "wecomValidationFailed": "Kimlik reddedildi veya bağlantı kullanılamıyor. Bilgileri ve ağı kontrol edin.",

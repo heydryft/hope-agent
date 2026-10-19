@@ -373,7 +373,7 @@
     "pluginDesc_wecom": "Direct AI-bot text for DMs and groups",
     "wecomBotId": "Bot ID",
     "wecomSecret": "Bot Secret",
-    "wecomSetupHint": "Get the Bot ID and Secret from WeCom. Use one client per bot: validation briefly subscribes; a healthy local connection is reused.",
+    "wecomSetupHint": "Get the Bot ID and Secret from WeCom. Use one client per bot. Validation briefly subscribes; unchanged credentials reuse a healthy local connection. Stop the running account before validating a changed Secret for that bot.",
     "wecomHostChanged": "The runtime changed. Close and reopen this form. Verify any pending operation on the original host before retrying.",
     "wecomValidated": "Authentication confirmed",
     "wecomValidationFailed": "Authentication rejected or unavailable. Check credentials and connection.",

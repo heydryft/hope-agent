@@ -373,7 +373,7 @@
     "pluginDesc_wecom": "智能机器人直连单聊与群聊文本",
     "wecomBotId": "Bot ID",
     "wecomSecret": "Bot Secret",
-    "wecomSetupHint": "从企业微信智能机器人后台获取 Bot ID 和 Secret。同一 Bot 仅使用一个客户端：校验会短暂订阅，已有本机健康连接会复用。",
+    "wecomSetupHint": "在企业微信取得 Bot ID 和 Secret。同一 Bot 仅使用一个客户端；校验会短暂订阅，原凭据的健康连接可复用。更改运行中 Bot 的 Secret 时，请先停止账户再校验。",
     "wecomHostChanged": "运行主机已变化，请关闭并重新打开此表单。 如有在途操作，请先回原主机核验结果，再重试。",
     "wecomValidated": "鉴权已确认",
     "wecomValidationFailed": "鉴权被拒绝或连接不可用，请检查凭据与网络。",
