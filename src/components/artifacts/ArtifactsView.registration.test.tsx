@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
 }))
 vi.mock("@/lib/transport-provider", () => ({
   getTransport: () => mocks.activeTransport ?? mocks,
+  useTransport: () => mocks.activeTransport ?? mocks,
   getTransportRevision: () => mocks.revision,
   useTransportRevision: () => mocks.revision,
 }))
@@ -53,6 +54,7 @@ vi.mock("./ArtifactRegistrationDialog", () => ({
     onImported: (artifact: ArtifactRecord) => void
   }) => (
     <div>
+      <input aria-label="runtime-host-path" defaultValue="" />
       {artifact && (
         <p>
           Target {artifact.id} v{artifact.currentVersion}
@@ -227,4 +229,20 @@ test("an old-host verification response cannot replace the new host update targe
   await act(async () => finishVerify({ status: "passed" }))
   fireEvent.click(screen.getByRole("button", { name: "artifacts.registration.update" }))
   expect(screen.getByText("Target artifact-new v8")).toBeTruthy()
+})
+
+test("routine access ticket renewal preserves the same host registration and typed path", async () => {
+  mocks.listArtifacts.mockResolvedValue([saved])
+  const view = render(<ArtifactsView isViewVisible />)
+  fireEvent.click(await screen.findByRole("button", { name: /Registered report/ }))
+  fireEvent.click(await screen.findByRole("button", { name: "artifacts.registration.update" }))
+  fireEvent.change(screen.getByRole("textbox", { name: "runtime-host-path" }), {
+    target: { value: "/managed/new-report.html" },
+  })
+  mocks.revision++ // HTTP ticket renewal keeps the exact same singleton/owner namespace.
+  view.rerender(<ArtifactsView isViewVisible />)
+  expect(screen.getByText("Target artifact-new v1")).toBeTruthy()
+  expect(screen.getByRole("textbox", { name: "runtime-host-path" })).toHaveValue(
+    "/managed/new-report.html",
+  )
 })
