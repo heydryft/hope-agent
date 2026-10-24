@@ -1281,7 +1281,7 @@ crates/ha-channel/src/channel/{name}/
 | 飞书 | `feishu/{mod,api,auth,format,media,inbound_media,ws_event}.rs` |
 | QQ Bot | `qqbot/{mod,api,auth,format,inbound_media,gateway}.rs` |
 | IRC | `irc/{mod,client,format,protocol}.rs` |
-| Signal | `signal/{mod,client,daemon,format,media,inbound_media}.rs` |
+| Signal | `signal/{mod,client,daemon,format,media,inbound_media,sse}.rs` |
 | iMessage | `imessage/{mod,client,format,media}.rs` |
 | WhatsApp | `whatsapp/{mod,api,format,media,inbound_media,polling}.rs` |
 | Google Chat | `googlechat/{mod,api,auth,format,inbound_media,webhook}.rs` |
