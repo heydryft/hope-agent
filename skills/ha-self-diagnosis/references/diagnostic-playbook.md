@@ -111,6 +111,8 @@ gotcha that most often explains a failure. Open every DB read-only.
 - Grep: `category='stt'` (session GC eviction). EventBus `stt:transcript_partial` / `stt:transcript_final` / `stt:session_error`.
 - Gotcha: no active model → `SttError::NoActiveModel` (fail-closed, never "any model"). Fallback / IM chains reject WS-only kinds via `check_batch_capable` (`supports_batch()`); desktop `active_model` may use WS (streaming). Size caps `MAX_BATCH_AUDIO_BYTES`=25 MiB (Tauri + HTTP + provider load) / chunk 1 MiB. WS providers are SSRF-checked through an http(s) twin (`ws_to_https_twin`). Provider list + keys are **owner-GUI-only** (not `update_settings`); only the `im_auto_transcribe` toggle is model-writable. Idle sessions GC'd after 300s. STT config is global — not incognito-scoped.
 
+- Signal 接收乱码/停止卡住：检查 `channel` / `signal-sse` 与 `signal/sse.rs`；按完整UTF-8行解析，CR/LF/CRLF及多行data保留。非法UTF-8或未完成行+事件超过1MiB时仅报固定错误类别并退避重连，不输出原消息；响应头和入站队列等待也应可取消。未启用Last-Event-ID重放，断连期间消息与真实daemon互操作另行验收，不删除队列或自动重放工具。
+
 ### Agent config / Onboarding / OpenClaw import / Main-LLM OAuth — `agent-config.md`, `onboarding.md`, `openclaw-import.md`, `llm-oauth.md`
 
 - Entry: `agent_config.rs` (`AgentConfig` + runtime `AgentDefinition` + `effective_memory_budget`), `agent_loader.rs` (`load_agent`/`list_agents`/`ensure_default_agent`/`DEFAULT_AGENT_ID`/`is_main_agent`), `agent/resolver.rs` (`resolve_default_agent_id_full` — 7-level chain + `AgentSource`), `agent/migration.rs` (legacy `default`→`ha-main`). Onboarding: `onboarding/{state,presets,apply}.rs`. OpenClaw import: `openclaw_import/{mod,agents,providers,memory,paths}.rs`. Main-LLM (Codex) OAuth: `oauth.rs`. Owner surface: `ha-server/routes/agents.rs` + `src-tauri/src/commands/`.
