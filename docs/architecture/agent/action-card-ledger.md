@@ -1,5 +1,26 @@
 # 行动卡统一迭代台账
 
+## 2026-10-25：接续 Signal 交付与前沿增量
+
+本轮续跑原受管工作树与 [PR #858](https://github.com/shiwenwen/hope-agent/pull/858)，保留原基线 `1346cf258073ff6c171eece9f2a8f3f6863bf347`；最新 main `2e79817d8a646c2c71cafa9855af6ff43a896f32`，核验 `2026-10-25T10:30:52.396433+00:00`，自有 writer lease 已取得。旧头 `42eeb84e` 的9项CI成功，但独立复审仍运行，且新 main 造成两处文档冲突；本轮保留双方内容并同步已核验 main，新头仍须普通 hooks、精确头独立复审、必需CI、已解决线程和保护合并回读。Signal 实现范围不扩大，不用旧头审查或CI代替新头门禁。
+
+13专项（含12前沿、00路线图）及Discussions的完整不可变JSON/MD均读取校验，仅12更新至10-25；747条来源、122雷达映射与11补充映射，仍为154张规范卡。81份依赖官方回执与26份历史回归回执hash读回通过；历史46项回归仍基于 `7d241dca`，没有补跑或视作当前main、原生设备验收。原依赖主责的 #860 已保护合入并读回，`rustsec:CVE-2026-111943` 的兼容补丁子范围转部分交付；真实平台信任路径与Provider验收不据此升级。交付前统计为已交付18、部分交付44、待决策33、待授权25、待证据20、观察14；Signal解析子包保护交付后，部分交付45、待证据19。
+
+| 稳定ID / 主责 | 新证据与处理结论 | 重新评估条件 |
+| --- | --- | --- |
+| `12-FTR-002` / automation-7，研究agent | 沿原卡吸收独立冻结参考标签、always-pass和忽略source-version两个坏验收器替身；元测试与任务成功分母分离，不重复建设已有字节hash | 原产品范围、夹具与owner启动合同复核；两夹具、至少12坏产物、三次重复仍是提案，未运行、未接正式Goal |
+| `12-FTR-006` / automation-7，关联03/05/10 | 沿原六组乘三提案区分dispatch前、效果后回执前与回执后；未知效果不自动重试，软件回退不等于外部效果撤销 | 真正移交、观察版本、动作意图和回执合同冻结；不把刷新暂停或同文案当授权恢复，无真实浏览器或账号实验 |
+| `12-FTR-007` / automation-7，研究agent | 保留四标签；按场景分报误判、漏检与unknown，完整性和infra_error单列，不以活动数认定进展 | 独立参考标签、原18样本和owner启动合同冻结；未运行首片，不改变block/continue/closure |
+| `rustsec:CVE-2026-111943` / hope-agent-3 | #860已交付rustls-webpki0.103.16与webpki-root-certs1.0.10；原主责上游拒绝不信任证书回归和DER字节检查通过 | 保留系统信任路径与真实攻击证据边界；ZIP、zbus和11-02 xAI继续原主责，xAI下一目标10-26 |
+
+本轮只收口一个在途交付，不新增实施包。Chrome四平台完整字节/SHA/许可/原生冒烟继续待证据；Signal重放与逐账号/daemon恢复尚未启用。Vercel保持owner已答未知后的 `pending_revalidation`，不重复提问。周一按最新证据做完整盘点；真实账号、费用、用户数据、宿主升级、正式产品控制合同与完整专项门控保持原边界。完整逐卡状态、输入和计划保存在同一run的 `continuations/20261025/`，专项历史只读。
+
+## 2026-10-25：依赖主责接续 emSign 信任链补丁
+
+`hope-agent-3` 精确 prepare 基线 `fba5eca8be4fc79c9c9a330e4757c671752164b8`，运行 `20261025T032835-3bdd5c12`，已取得自有 writer lease。完整分页为 22 个 open PR，没有依赖机器人 PR；本轮唯一维护包 [PR #860](https://github.com/shiwenwen/hope-agent/pull/860) 沿既有 `rustsec:CVE-2026-111943`，成对修补 `rustls-webpki` 0.103.16 与 `webpki-root-certs` 1.0.10，调用条件和平台边界见[安全合同](../infra/security.md#2026-10-25-emsign-信任链安全补丁)。普通 hooks、精确 head CI、审查线程、保护合入与远端读回均为交付条件，终态以同一 run 的回执为准。
+
+#853 的 Vite/Vitest/DOMPurify 安全包已由原主责保护交付，保留基线 React Hooks 规则；不重复实施。ZIP 权限、zbus 上游兼容、Zod/Undici 开发依赖补丁继续原卡，未因本轮证书补丁完成。`embedding:A2` 的 xAI 质量别名在 11-02 改变解析与默认质量，距本轮 8 天；10-25 目标保留记录，本轮因现有 P0 证书事项顺延至 10-26 的下一个单包，仍在每日实施队列，不等双周报。替代需显式 `grok-imagine-image-2.0` 与 `quality` 的 schema/离线 payload 合同；不得静默改写已存配置或调用付费模型，回退仅评估官方明确不受影响的 1.0 型号。
+
 ## 2026-10-24：Signal 接收解析与停止保护
 
 本轮实现见 [PR #858](https://github.com/shiwenwen/hope-agent/pull/858)。33项Signal定向检查与普通pre-push通过；最终头独立复审、必需CI和保护合并以交付回执为准。
