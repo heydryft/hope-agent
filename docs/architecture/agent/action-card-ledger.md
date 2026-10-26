@@ -7,12 +7,13 @@
 没有依赖机器人 PR；六组雷达完整 JSON 校验通过，LLM 专项已更新至 10-26，
 已交付的 #841 与 #861 范围沿原主责核对，不重复实施。
 
-本轮唯一维护包沿 `embedding:A2` / `02-A3`：11-02 前清理新建 xAI 模板的质量别名，
+本轮唯一维护包 [PR #862](https://github.com/shiwenwen/hope-agent/pull/862) 沿 `embedding:A2` / `02-A3`：11-02 前清理新建 xAI 模板的质量别名，
 显式 `grok-imagine-image-2.0` + `quality=low`，维持 1.0 首选；现有 schema 和适配器
 已支持该参数，补配置序列化至实际 profile 请求体的离线回归。详细边界、替代与
 回退见[媒体生成合同](../infra/media-generation.md#xai-质量别名的临期目录维护2026-10-26)。
 不改已存配置，不启用未实现的编辑协议；真实账号、付费、画质与账单验收仍待独立合同。
-普通 hooks、精确 head CI、审查线程、保护合入与远端读回齐全后才记录交付。
+首次普通 hooks 全部通过，未使用跳过标志；最终提交的精确 head CI、审查线程、
+保护合入与远端读回齐全后才记录交付。
 ZIP、zbus、Zod/Undici 与托管 Chrome 继续原卡和主责，本轮未实施。
 
 ## 2026-10-25：接续 Signal 交付与前沿增量
