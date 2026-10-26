@@ -1,5 +1,63 @@
 # 行动卡统一迭代台账
 
+## 2026-10-25：接续 Signal 交付与前沿增量
+
+本轮续跑原受管工作树与 [PR #858](https://github.com/shiwenwen/hope-agent/pull/858)，保留原基线 `1346cf258073ff6c171eece9f2a8f3f6863bf347`；最新 main `2e79817d8a646c2c71cafa9855af6ff43a896f32`，核验 `2026-10-25T10:30:52.396433+00:00`，自有 writer lease 已取得。旧头 `42eeb84e` 的9项CI成功，但独立复审仍运行，且新 main 造成两处文档冲突；本轮保留双方内容并同步已核验 main，新头仍须普通 hooks、精确头独立复审、必需CI、已解决线程和保护合并回读。Signal 实现范围不扩大，不用旧头审查或CI代替新头门禁。
+
+13专项（含12前沿、00路线图）及Discussions的完整不可变JSON/MD均读取校验，仅12更新至10-25；747条来源、122雷达映射与11补充映射，仍为154张规范卡。81份依赖官方回执与26份历史回归回执hash读回通过；历史46项回归仍基于 `7d241dca`，没有补跑或视作当前main、原生设备验收。原依赖主责的 #860 已保护合入并读回，`rustsec:CVE-2026-111943` 的兼容补丁子范围转部分交付；真实平台信任路径与Provider验收不据此升级。交付前统计为已交付18、部分交付44、待决策33、待授权25、待证据20、观察14；Signal解析子包保护交付后，部分交付45、待证据19。
+
+| 稳定ID / 主责 | 新证据与处理结论 | 重新评估条件 |
+| --- | --- | --- |
+| `12-FTR-002` / automation-7，研究agent | 沿原卡吸收独立冻结参考标签、always-pass和忽略source-version两个坏验收器替身；元测试与任务成功分母分离，不重复建设已有字节hash | 原产品范围、夹具与owner启动合同复核；两夹具、至少12坏产物、三次重复仍是提案，未运行、未接正式Goal |
+| `12-FTR-006` / automation-7，关联03/05/10 | 沿原六组乘三提案区分dispatch前、效果后回执前与回执后；未知效果不自动重试，软件回退不等于外部效果撤销 | 真正移交、观察版本、动作意图和回执合同冻结；不把刷新暂停或同文案当授权恢复，无真实浏览器或账号实验 |
+| `12-FTR-007` / automation-7，研究agent | 保留四标签；按场景分报误判、漏检与unknown，完整性和infra_error单列，不以活动数认定进展 | 独立参考标签、原18样本和owner启动合同冻结；未运行首片，不改变block/continue/closure |
+| `rustsec:CVE-2026-111943` / hope-agent-3 | #860已交付rustls-webpki0.103.16与webpki-root-certs1.0.10；原主责上游拒绝不信任证书回归和DER字节检查通过 | 保留系统信任路径与真实攻击证据边界；ZIP、zbus和11-02 xAI继续原主责，xAI下一目标10-26 |
+
+本轮只收口一个在途交付，不新增实施包。Chrome四平台完整字节/SHA/许可/原生冒烟继续待证据；Signal重放与逐账号/daemon恢复尚未启用。Vercel保持owner已答未知后的 `pending_revalidation`，不重复提问。周一按最新证据做完整盘点；真实账号、费用、用户数据、宿主升级、正式产品控制合同与完整专项门控保持原边界。完整逐卡状态、输入和计划保存在同一run的 `continuations/20261025/`，专项历史只读。
+
+## 2026-10-25：依赖主责接续 emSign 信任链补丁
+
+`hope-agent-3` 精确 prepare 基线 `fba5eca8be4fc79c9c9a330e4757c671752164b8`，运行 `20261025T032835-3bdd5c12`，已取得自有 writer lease。完整分页为 22 个 open PR，没有依赖机器人 PR；本轮唯一维护包 [PR #860](https://github.com/shiwenwen/hope-agent/pull/860) 沿既有 `rustsec:CVE-2026-111943`，成对修补 `rustls-webpki` 0.103.16 与 `webpki-root-certs` 1.0.10，调用条件和平台边界见[安全合同](../infra/security.md#2026-10-25-emsign-信任链安全补丁)。普通 hooks、精确 head CI、审查线程、保护合入与远端读回均为交付条件，终态以同一 run 的回执为准。
+
+#853 的 Vite/Vitest/DOMPurify 安全包已由原主责保护交付，保留基线 React Hooks 规则；不重复实施。ZIP 权限、zbus 上游兼容、Zod/Undici 开发依赖补丁继续原卡，未因本轮证书补丁完成。`embedding:A2` 的 xAI 质量别名在 11-02 改变解析与默认质量，距本轮 8 天；10-25 目标保留记录，本轮因现有 P0 证书事项顺延至 10-26 的下一个单包，仍在每日实施队列，不等双周报。替代需显式 `grok-imagine-image-2.0` 与 `quality` 的 schema/离线 payload 合同；不得静默改写已存配置或调用付费模型，回退仅评估官方明确不受影响的 1.0 型号。
+
+## 2026-10-24：Signal 接收解析与停止保护
+
+本轮实现见 [PR #858](https://github.com/shiwenwen/hope-agent/pull/858)。33项Signal定向检查与普通pre-push通过；最终头独立复审、必需CI和保护合并以交付回执为准。
+
+精确prepare成功：基线 `1346cf258073ff6c171eece9f2a8f3f6863bf347`，核验 `2026-10-24T10:34:43.319622+00:00`，本轮独立工作树持有自有writer lease。上轮#855已合入，无本任务在途PR；实时分页21 OPEN PR、44 OPEN Issue，全部保留。#853前端安全依赖由原主责保护交付并进入当前基线；#841模型、#771镜像与其他贡献者分支继续由原主责处理。
+
+13专项（含12前沿、00路线图）及Discussions的LATEST与完整不可变JSON/MD全部读取，schema/hash/来源引用/秘密校验通过，输入相较10-23未变化；旧周期与旧源码基线仍显式保留，没有补跑历史检查。749条来源、122雷达映射+11补充映射，154张规范卡，不新增改名或重复卡。继承已交付18、部分交付43、待决策33、待授权25、待证据21、观察14；`10-A14`解析子范围保护交付后整卡转部分交付，届时部分交付44、待证据20。81份依赖官方回执及26份回归回执hash读取通过；历史46项回归仍基于`7d241dca`，不冒充本轮main或真实设备验收。
+
+| 优先级 / 稳定ID / 主责 | 用户工作流、基线与本轮范围 | 验收及剩余边界 |
+| --- | --- | --- |
+| P1 / `10-A14`，automation-7，来源im-sdk:A14 | Signal接收中文/emoji不受HTTP分片影响，停止账号可取消连接及排队。基线逐chunk有损UTF8、仅LF、无缓冲总上限，响应头和投递等待不响应取消；本轮只做有界解析和取消保护 | 33项Signal定向检查通过，覆盖任意字节切分、三种换行、BOM、多行/空data、字段空白、未完成EOF、畸形UTF8、1MiB上限、元数据过滤、响应头和满队列取消；正常hooks、当前头复审/CI、保护合并另据交付回执 |
+| P0 / `07-HA-RT-008`，automation-7 | Chrome四平台完整字节/SHA/来源/许可/原生冒烟仍缺 | 不只改版本或部分提升，不升级宿主；证据完整后重评 |
+| P1 / 依赖关联`06-SDK-07`、`06-SDK-13`，hope-agent-3 | #853交付Vite8.3.4/Vitest4.1.12/DOMPurify3.4.17安全补丁；不重复接管 | emSign、ZIP、zbus、xAI等剩余队列继续原主责；不据补丁宣称TS7/Vitest5迁移完成 |
+| 待决策 / `IM-VERCEL-DEPLOYMENT-RETENTION` | owner已答“尚不清楚，保留待核实” | 继续pending_revalidation；不重复提问、读账号、改设置或花费 |
+
+本轮一个安全小包。SSE解析器逐连接创建，不保存消息或游标；非法UTF8、未完成行与事件合计超1MiB时明确断连，日志不回显载荷，附件字节仍走既有延迟物化。仅默认/receive事件进入既有入站入口，其他元数据不触发新turn。尚未启用`id`/`Last-Event-ID`重放，不宣称断线零丢失、重复执行为零或跨账号/daemon恢复已验收；后续先冻结游标过期/重置/乱序和逐账号/daemon代次合同再做有界合成包。真实服务、账号、费用、生产数据、宿主升级及完整专项门控不变。
+
+## 2026-10-23：Node安全补丁与OpenViking列表完整性
+
+本轮交付见 [PR #855](https://github.com/shiwenwen/hope-agent/pull/855)。正常首轮pre-push通过Rust5453项（7既有忽略）、前端308文件/1802项；最终提交仍须独立复审与8项required CI。
+
+精确prepare续跑原run成功；保留原始基线`a6a5da2ed015791d024c2671f2733732de9bbb0e`，最新main`b33bfa7bbacca20afa2284e14ff173c75a964121`，核验`2026-10-23T10:33:21.216985+00:00`。旧工作树干净后仅快进到该已核验提交，未改入口工作树；本轮取得自有writer lease。没有本任务在途PR；完整分页为22 OPEN PR、42 OPEN Issue，全部保留。#826已由依赖主责交付，#841模型适配、#853依赖组和#771镜像digest归原主责，不重复建包；发布状态由发布任务回读，不据合并推断已发布。
+
+13专项（含12前沿、00路线图）完整不可变JSON/MD及成功Discussions均校验通过；仅10专项更新至10-23。749条雷达/社区来源、122雷达映射+11补充映射，共154张规范卡；交付前登记口径为已交付18、部分交付42、待决策33、待授权26、待证据21、观察14。Node仓库子范围保护合入后，整卡转部分交付，统计为部分交付43、待授权25，其余不变；宿主范围仍受门控。本轮新增3卡均为待证据，未选中实施；旧卡沿稳定ID及主责，不把更名或重复映射计新卡。67份依赖官方回执与26份回归回执hash读取通过；回归在`7d241dca`执行46项有界检查，失败的初始资源检查与预期sentinel保留，成功准备后workspace检查单独记录；不重跑、不视作本轮main/原生/真实账号验收。
+
+| 优先级 / 稳定ID | 用户工作流、实施与验收 | 当前边界 / 重评条件 |
+| --- | --- | --- |
+| P0 / 07-HA-RT-009，automation-7 | main Lint39914864235的实际Node缓存为24.21.0；五处setup-node统一固定24.22.1。刷新Docker基础镜像digest55fb5f5a，隔离无网络只读容器读回24.22.1 | 当前头CI实际版本、正常hooks和保护交付仍须回读；整卡宿主工具范围待授权，不升级宿主。Dockerfile与现有#771不重复修改 |
+| P1 / 04-A7，automation-7 | 列表在过滤前核原始节点与顶层has_more；截断/畸形/旧版上限明确失败，停止后续拉取与新导出；11项定向测试通过，两身份路由、5000+1、列表增长及零内容/导出/账本改变均覆盖 | 只交付截断保护；变动列表可靠续扫、真实服务、版本矩阵未验，保持部分交付，不猜offset或完成尾节点 |
+| P1 / 10-A17，automation-7，来源im-sdk:A17 | Google Chat默认语法变化：创建仅Markdown显式，编辑固定Chat文本；静态缺口成立，离线body/mask与消息语法生命周期夹具待运行 | 待证据；先核PATCH字段合同，不猜mask、不改云设置或重发消息 |
+| P1 / 10-A18，automation-7，来源im-sdk:A18 | imsg0.19编辑/撤回复用原ID，现去重与普通Message投递未区分mutation；需typed事件与重启夹具 | 待证据；保留0.15.8安全下限，0.19.0只是兼容测试目标，不升级宿主/读设备 |
+| P2 / 10-A16，automation-7，来源im-sdk:A16 | #848已交付WeCom第13通道final文本；流式Snapshot、媒体、卡片与主动发送未启用 | 待证据；先冻结文本预览范围与授权租户验收，不按上游有接口推导已支持 |
+| P1 / 10-O2关联、10-A14排队 | Chat MCP资格11-11/11-12条件截止仅影响已部署MCP；现service-account REST不派发迁移。Signal逐账号/daemon重放仍排队 | 不查真实账号、不改OAuth；真实MCP适用性有证据后走统一决策。Signal/飞书JWT未运行 |
+| P0/P1 / 原主责 | Chrome四平台完整字节/SHA/许可/原生证明仍缺；emSign/Vite/Vitest/DOMPurify/ZIP/zbus/xAI沿依赖主责 | 无真实攻击/全图安全结论；10-25和11-02目标保留，最多只处理本轮两个包 |
+
+Vercel沿10-21明确答复“尚不清楚，保留待核实”保持`IM-VERCEL-DEPLOYMENT-RETENTION=pending_revalidation`；不重复提问、访问账号或改设置/费用。旧00/09/Provider输入继续注明自身周期，不补跑历史专项。完整逐卡状态、来源映射、实施计划和回执位于受管run的`continuations/20261023/`；定向验证通过后按普通push门禁、精确head复审与required CI交付，尚未合并的实现不报已交付。
+
 ## 2026-10-18：接续 MCP 交付与每日证据对账
 
 精确 prepare 先返回本任务旧 run，再按 `--resume` 成功续跑 `20261017T103309-38386cd4`；原始基线 **61737ff55b7d349bffa20c5da43742098da584b3** 保留，最新 main **630846090637999d62af23897e6358bb99234160**，核验时间 **2026-10-18T10:26:48.146167+00:00**。本轮只接续 [PR #837](https://github.com/shiwenwen/hope-agent/pull/837)：将已核验 main 的 TLS 补丁和台账并入原分支，解决两处文档并发冲突；#837 复审发现对话后缀会破坏 MCP Hook JSON：已按调用方区分对话正文与 Hook 协议，后者仅接收已知且可解码的结构化Hook协议，附加元数据/畸形值沿旧正文；空对象保持正常审批；双协议按真实事件保留更严格决定及continue:false；同一连接/并发/超时/错误路径保留，不接受工具入参切换。双协议还保留正常审批、上下文和旧改写，空嵌套及合法空值协议也维持正常审批，仅共同显式allow才跳过软审批。新增内存 JSON-RPC → rmcp → 装配 → Hook runner → parser 回归，覆盖 deny/block/ask/continue:false，并补十类元数据/较弱协议双结果。#838 已 MERGED，统一决策 `OPS-CODE-REVIEW-CAPACITY` 由其精确头云端复审成功证据解除；#837 仍须自己的新头复审与 CI，不能沿用 #838 的审查或旧头 9/9 CI。
@@ -275,12 +333,12 @@ prepare `exit=0/ok=true`；基线 **29aef3279f1c19610fd58b5dc9c8b53dda3f9f4b**�
 | `12-FTR-004` | 部分交付 | 09-20 FTR-004（新增） | #737 的内存 SQLite 八周合成 PoC，原12类检查通过，本周未重新执行；生产模板/Goal revision 对接、展示文案和样本门需后续决策。 |
 | `12-FTR-005` | 部分交付 | 10-04 FTR-005 → 09-27 同 ID；10-11 FTR-005 | #775已确认MERGED且当前main包含typed内存PoC；151行四组×3为历史作者自测，本轮不补跑。真实文件字节、自然语言与生产Domain Quality验收未完成，FTR-002独立保留。 |
 | `12-FTR-006` | 待决策 | 10-04 FTR-006 | 新接管/交回控制合同与 owner 实验门未启动；建议6组 fake表单×3，要求正式事件屏障，不能将刷新暂停或 role/text 重定位当停止/授权；无运行成绩。 |
-| `06-SDK-01` | 部分交付 | 10-06 SDK-01 | 修补 Tauri 跨窗口 IPC Channel：Tauri 2.11.6锁与最低约束；上游queue源码有所属webview隔离/关闭清理。workspace与当前头CI证据另列；真实双webview大响应/聊天流验收尚无本轮结果，取得隔离设备fixture后重评。 |
+| `06-SDK-01` | 部分交付 | 10-06 SDK-01 | 修补 Tauri 跨窗口 IPC Channel：Tauri 2.12.4 / JS API 2.12.4 配对锁（10-19 #839）；原最低约束保留；上游queue源码有所属webview隔离/关闭清理。workspace与当前头CI证据另列；真实双webview大响应/聊天流验收尚无本轮结果，取得隔离设备fixture后重评。 |
 | `06-SDK-02` | 部分交付 | 10-06 SDK-02 | 升级 PDF 文本解析，阻断小文件栈溢出：ha-core/ha-design配对pdf-extract0.12.1→lopdf0.42.0；合成10380层PDF子进程、正常两页/空页回归，证据见定向日志。图像/PDFium和真实用户PDF不在该文本补丁验收内；失败保持受控文本回退。 |
 | `06-SDK-04` | 部分交付 | 10-06 SDK-04 | 独立提升 rustls 与 h2 安全补丁：Cargo.lock rustls0.23.46（10-18补丁）/h2 0.4.16，保留native-tls；共享rustls支线未忽略。公告与resolver/编译可复核，未运行畸形TLS握手/空DATA专用攻击fixture；有平台fixture后复核，不能回退脆弱下限。；10-18依赖主责PR838已MERGED，rustls0.23.46；真实TLS/H2攻击与平台专项未验，卡仍部分交付。 |
 | `06-SDK-05` | 部分交付 | 10-06 SDK-05 | 同时修补自有 XML 与 calamine 传递链：自有quick-xml0.41.0及calamine0.36.1配对，XML1.0归一化API、原深度/属性/实体/ZIP预算保留；合成Excel类型/空白及Office负例证据见定向日志。xcb构建链0.30.0仍待上游兼容，真实Office样本未授权。 |
 | `06-SDK-06` | 部分交付 | 10-06 SDK-06 | 采用 Tokio 进程与取消生命周期修复：Tokio1.53.2安全生命周期补丁已锁，原MCP kill_on_drop/JobManager/Stop保持。取消/子进程相关现有测试与跨平台CI另列，不把macOS编译宣称Windows句柄实机证明。 |
-| `06-SDK-07` | 部分交付 | 10-06 SDK-07 | 将 updater 降级决定收回应用配置：updater Rust/JS精确2.12.0、应用allowDowngrades=false；既有GUI回归与workspace check证据另列。未使用生产源/安装真实更新，本地签名降级manifest与完整平台安装仍待fixture；不得由renderer覆盖或回退版本门。 |
+| `06-SDK-07` | 部分交付 | 10-06 SDK-07 | 将 updater 降级决定收回应用配置：updater Rust/JS精确2.14.0（10-19 #839配对维护）、应用allowDowngrades=false；既有GUI回归与workspace check证据另列。未使用生产源/安装真实更新，本地签名降级manifest与完整平台安装仍待fixture；不得由renderer覆盖或回退版本门。 |
 | `06-SDK-08` | 部分交付 | 10-06 SDK-08 | 清理 lru 条件性内存安全问题：ha-core/ha-channel lru最低0.18.2、实际锁0.18.5；容量、淘汰和计量key语义保留。当前缓存回归/CI另列，无新增unsafe或生产数据；自定义panic Drop攻击验收未运行，有反证后重评。 |
 | `06-SDK-09` | 部分交付 | 10-06 SDK-09 | 更新 DOMPurify 安全下限并核查第三方配置：DOMPurify override>=3.4.16、锁3.4.16，保留现行过滤。源码未引入IN_PLACE/hook；第三方清洗/跨调用真实攻击覆盖仍待专用fixture，不称默认Markdown已有XSS复现或完全免疫。 |
 | `06-SDK-11` | 部分交付 | 10-06 SDK-11 | 替换停止维护的 mp4-muxer：现有客户端MP4迁移候选Mediabunny1.61.3（MPL-2.0元数据已核），保持harness/H.264/关键帧/时间戳；逐帧排空异步写，成功仅返最终MP4；合成码流容器两帧读回与编码/写入失败清理3项通过。只供合成测试引用，生产默认仍为mp4-muxer；按来源门先取得各平台实际H.264/播放fixture再切换，质量/速度尚未测。 |

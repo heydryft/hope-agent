@@ -28,7 +28,7 @@ Hope Agent connects to each vendor's large models through a "**provider + API ke
 
 New Fireworks templates exclude retired GLM 5.2 Fast and Kimi K2.6 Turbo/Fast. Existing connections and dedicated deployments keep their settings; if you use a retired serverless model, choose a replacement according to the provider’s current availability.
 
-New MiniMax templates recommend M3 and exclude M2.5, M2.7, and M2.7 Highspeed. The vendor will close these models to new users on October 19, 2026. Existing pay-as-you-go users retain access until retirement on November 18; M Plan / Token Plan requests will instead be routed by the vendor to M3.1 Flash Preview starting October 19. Hope preserves saved model IDs, endpoints, prices, and fallback choices. Check your plan before migrating; the plan-restricted Preview is excluded from the general template.
+New MiniMax templates recommend M3 and exclude M2.5, M2.7, and M2.7 Highspeed. The vendor closed these models to new users on October 19, 2026. Existing pay-as-you-go users retain access until retirement on November 18; M Plan / Token Plan requests will instead be routed by the vendor to M3.1 Flash Preview starting October 19. Hope preserves saved model IDs, endpoints, prices, and fallback choices. Check your plan before migrating; the plan-restricted Preview is excluded from the general template.
 
 Templates and model autocomplete now include **Claude Haiku 5.5**, **Grok 4.7**, **MiniMax M3**, and Fireworks **DeepSeek V4.1 Flash, GLM 5.3, and GLM 5.3 Flash**. Haiku 5.5 supports a 1M context and 128K output, uses adaptive thinking, and allows thinking to be disabled; temperature is omitted. Grok 4.7 uses the OpenAI Chat compatible API, accepts images, supports a 500K context, a 64K output preset, and reasoning up to `xhigh`; the vendor does not allow thinking to be disabled. The three Fireworks presets use Chat with a conservative 131,072-token output cap from the official examples; check dedicated deployment limits separately.
 
@@ -73,6 +73,12 @@ If your provider has no ready-made template, choose "Custom provider" and follow
 Autocomplete works when adding or editing models without replacing your relay's address, API type, key, or thinking parameter format. If the catalog has pricing in the same currency that differs from your current pricing, a dialog shows the source and unit prices and lets you keep your prices or use the catalog prices; prices in another currency never directly overwrite yours. Model IDs are not autocorrected or automatically capitalized by the system. When you enter a full ID, a candidate with exactly matching case appears first.
 
 > Suggestions come from built-in templates, not an online probe of models available through your relay. The same model ID can have different context limits at different providers. Check the suggestion's source and use the ID, capabilities, and actual pricing supported by your provider.
+
+In the wizard’s model step or the provider edit page, choose **Discover models** to read the current endpoint’s online model list. Select the entries to add, enter context and maximum output token limits, and confirm that they support text chat and tool calls. Nothing is selected automatically. Existing models are neither duplicated nor overwritten. The additions remain a draft until you save the provider; new entries use text input with reasoning off, and you can edit capabilities and pricing before saving.
+
+For a local or private-network Base URL, explicitly enable **Allow private network** in the wizard’s connection step before discovery. It defaults to off and is saved with the provider; discovery never enables private access automatically.
+
+Discovery only reads the model list and sends no test conversation. A listed model is not proof of chat compatibility. If the endpoint is unsupported, access is denied, or network policy blocks the request, you can still add models manually. An incomplete list is marked. This version reads only IDs and display names, without inferring purpose, token limits, or pricing from names. ChatGPT OAuth providers keep their existing catalog instead of using this entry point.
 
 ### Common provider settings
 
@@ -328,7 +334,7 @@ The image and audio artifacts of the [Design Space](06-design-space.md) run on t
 
 > When adjusting settings through conversation, the AI can only change the default chains and the parameters in the table above; provider entries (including API keys) **can only be changed in the GUI**.
 
-New image templates exclude retired DALL·E 3 and Google Imagen 4 / older Gemini image presets; Google uses `gemini-3.1-flash-image` / `gemini-3-pro-image`. Choose replacements for existing configurations according to your provider’s current availability. GPT Image 1 shuts down on October 23, 2026; new OpenAI image templates now offer only GPT Image 2. Saved configurations are not migrated automatically; check replacement models and required parameters before the deadline. Direct OpenAI chat templates also stop recommending `o1` / `o1-pro` / `o3-mini` / `o4-mini`, which retire on the same date, and removes the already retired `o3-deep-research` / `o4-mini-deep-research` presets. Adjust existing models and default chains yourself. Catalog maintenance does not establish actual image quality.
+New image templates exclude retired DALL·E 3 and Google Imagen 4 / older Gemini image presets; Google uses `gemini-3.1-flash-image` / `gemini-3-pro-image`. Choose replacements for existing configurations according to your provider’s current availability. GPT Image 1 shuts down on October 23, 2026; new OpenAI image templates now offer only GPT Image 2. Saved configurations are not migrated automatically; check replacement models and required parameters before the deadline. Direct OpenAI chat templates also stop recommending `o1` / `o1-pro` / `o3-mini` / `o4-mini`, which retire on the same date, and remove the already retired `o3-deep-research` / `o4-mini-deep-research` presets. Adjust existing models and default chains yourself. Catalog maintenance does not establish actual image quality.
 
 ---
 
